@@ -26,15 +26,20 @@ class genwp_KeyPage {
     }
 
     public function handleFormSubmission() {
-       $taxonomy = isset($_POST["taxonomy"]) ? sanitize_text_field($_POST["taxonomy"]) : '';
-        $selectedItems = isset($_POST["selected_terms"]) ? array_map('intval', $_POST["selected_terms"]) : array();
+        $taxonomy = isset($_POST['taxonomy']) ? sanitize_text_field($_POST['taxonomy']) : '';
+        $selectedItems = isset($_POST['selected_terms']) ? array_map('intval', $_POST['selected_terms']) : array();
         $option = array('taxonomy' => $taxonomy, 'items' => $selectedItems);
         $this->generateKeywords($option);
     
-        // Redirect to the 'Found Keywords' page after generating and saving the keywords.
+        // Append the new keywords to the existing keywords in the 'genwp_selected_keywords' option
+        $selected_keywords = get_option('genwp_selected_keywords', []);
+        $selected_keywords = array_merge($selected_keywords, $this->keywords);
+        update_option('genwp_selected_keywords', $selected_keywords);
+    
+        // Redirect to the 'Found Keywords' page
         wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
         exit;
-    }       
+    }   
 
     private function generateKeywords($option) {
         $taxonomy = $option['taxonomy'];

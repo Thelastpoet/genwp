@@ -15,6 +15,7 @@ class OpenAIGenerator {
     private $frequency_penalty;
     private $presence_penalty;
     private $http_args;
+    private $base_url;
 
     public function __construct() {
         $settings = get_option('genwp_settings', array());
@@ -26,6 +27,7 @@ class OpenAIGenerator {
         $this->top_p = isset($settings['top_p']) ? (float) $settings['top_p'] : 1.0;
         $this->frequency_penalty = isset($settings['frequency_penalty']) ? (float) $settings['frequency_penalty'] : 0.0;
         $this->presence_penalty = isset($settings['presence_penalty']) ? (float) $settings['presence_penalty'] : 0.0;
+        $this->base_url = 'https://api.openai.com/v1/';
 
         $this->http_args = array(
             'headers' => array(
@@ -37,10 +39,9 @@ class OpenAIGenerator {
     }
 
     private function get_api_url($endpoint) {
-        $base_url = 'https://api.openai.com/v1/';
         $endpoints = array(
-            'chat' => $base_url . 'chat/completions',
-            'completion' => $base_url . 'completions',
+            'chat' => $this->base_url . 'chat/completions',
+            'completion' => $this->base_url . 'completions',
         );
         return $endpoints[$endpoint];
     }

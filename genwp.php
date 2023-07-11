@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Plugin Name: genwp
+ * Plugin Name: GenWP
  * Plugin URI: https://nabaleka.com
- * Description: This plugin creates full WordPress posts with OpenAI Models.
+ * Description: GenWP creates full WordPress posts with OpenAI Models.
  * Version: 1.0.0
  * Author: Ammanulah Emmanuel
  * Author URI: https://ammanulah.com
@@ -19,7 +19,7 @@
      exit; // Exit if accessed directly.
  }
 
- class genwp {
+ class Genwp {
  
     const VERSION = '1.0.0';
     public $PLUGIN_DIR;
@@ -48,6 +48,7 @@
         require_once $this->PLUGIN_DIR . 'admin/partials/gen-key-table.php';
         include_once $this->PLUGIN_DIR . 'admin/content-settings.php';
 
+        require_once $this->PLUGIN_DIR . 'vendor/autoload.php';
     }
 
     public function activate_plugin() {
@@ -55,5 +56,6 @@
         $genwp_db->create_table();
     }
 }
- 
+// Disable the wpautop filter
+remove_filter('the_content', 'wpautop');
 new genwp();

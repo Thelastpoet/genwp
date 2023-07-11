@@ -67,20 +67,13 @@ class Gen_Key_Table extends \WP_List_Table {
 
     public function get_columns() {
         return array(
-            'cb' => '<input type="checkbox" />', // To add a checkbox
+            'cb' => '<input type="checkbox" onclick="jQuery(\'input[name*=\\\'keywords\\\']\').attr(\'checked\', this.checked);" />',
             'keyword' => 'Keyword',
             'actions' => 'Actions'
         );
     }
 
-    public function column_cb($item) {
-        // Add a "Select All" checkbox to the table header
-        static $print_header = true;
-        if ($print_header) {
-            $print_header = false;
-            return '<input type="checkbox" onclick="jQuery(\'input[name*=\\\'keywords\\\']\').attr(\'checked\', this.checked);" />';
-        }
-        
+    public function column_cb($item) {       
         // Add a checkbox for each keyword in the table
         return sprintf(
             '<input type="checkbox" name="keywords[]" value="%s" />', $item['keyword']
@@ -90,10 +83,10 @@ class Gen_Key_Table extends \WP_List_Table {
     public function column_default($item, $column_name) {
         switch ($column_name) {
             case 'keyword':
-                return $item['keyword'];  // Assuming 'keyword' is a key in $item
+                return $item['keyword']; 
             case 'actions':
                 // Display an edit button
-                return sprintf('<a href="?page=%s&action=%s&keyword=%s">Edit</a>', 'edit_keyword', 'edit', $item['keyword']); // Assuming 'keyword' is a key in $item
+                return sprintf('<a href="?page=%s&action=%s&keyword=%s">Edit</a>', 'edit_keyword', 'edit', $item['keyword']);
             default:
                 return print_r($item, true);
         }
@@ -101,8 +94,8 @@ class Gen_Key_Table extends \WP_List_Table {
 
     function get_bulk_actions() {
         $actions = array(
-            'delete'    => 'Delete',
-            'write'    => 'Write'
+            'delete'    => 'Delete Keywords',
+            'write'    => 'Write Articles'
         );
         return $actions;
     }
