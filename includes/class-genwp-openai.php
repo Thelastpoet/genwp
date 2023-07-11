@@ -1,6 +1,6 @@
 <?php
 
-namespace Luya;
+namespace genwp;
 
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
@@ -17,11 +17,11 @@ class OpenAIGenerator {
     private $http_args;
 
     public function __construct() {
-        $settings = get_option('luya_settings', array());
+        $settings = get_option('genwp_settings', array());
 
-        $this->api_key = isset($settings['luya-openai-api-key']) ? $settings['luya-openai-api-key'] : '';
+        $this->api_key = isset($settings['genwp-openai-api-key']) ? $settings['genwp-openai-api-key'] : '';
         $this->model = isset($settings['model']) ? $settings['model'] : 'text-davinci-003';
-        $this->max_tokens = isset($settings['max_tokens']) ? (int) $settings['max_tokens'] : 1000;
+        $this->max_tokens = isset($settings['max_tokens']) ? (int) $settings['max_tokens'] : 10000;
         $this->temperature = isset($settings['temperature']) ? (float) $settings['temperature'] : 0.7;
         $this->top_p = isset($settings['top_p']) ? (float) $settings['top_p'] : 1.0;
         $this->frequency_penalty = isset($settings['frequency_penalty']) ? (float) $settings['frequency_penalty'] : 0.0;
@@ -32,7 +32,7 @@ class OpenAIGenerator {
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Bearer ' . $this->api_key,
             ),
-            'timeout' => 100,
+            'timeout' => 1000,
         );
     }
 
@@ -41,7 +41,6 @@ class OpenAIGenerator {
         $endpoints = array(
             'chat' => $base_url . 'chat/completions',
             'completion' => $base_url . 'completions',
-            'edit' => $base_url . 'edits',
         );
         return $endpoints[$endpoint];
     }
@@ -73,6 +72,18 @@ class OpenAIGenerator {
             throw new \Exception($response->get_error_message());
         }
 
+        $response_code = wp_remote_retrieve_response_code($response);
+        switch($response_code) {
+            case 401:
+                throw new \Exception('Invalid Authentication: Ensure the correct API key and requesting organization are being used.');
+            case 429:
+                throw new \Exception('Rate limit reached for requests: Pace your requests or check your maximum monthly spend.');
+            case 500:
+                throw new \Exception('The server had an error while processing your request: Retry your request after a brief wait and contact us if the issue persists.');
+            case 503:
+                throw new \Exception('The engine is currently overloaded, please try again later.');
+        }
+
         $response_body = json_decode(wp_remote_retrieve_body($response), true);
            
         if (isset($response_body['choices'][0]['text'])) {
@@ -85,30 +96,37 @@ class OpenAIGenerator {
     }
    
     public function generate_completion($prompt, $args = array()) {
-        if ($this->model == 'gpt-4' || $this->model == 'gpt-3.5-turbo') {
+        if ($this->model == 'gpt-4' || $this->model == 'gpt-3.5-turbo-16k') {
             // Chat Model
             $messages = array(
                 array(
                     "role" => "system", 
-                    "content" => "You are a professional online news writer. Your task is to write the provided article in a unique reporting tone, adding quotes from subjects when necessary. Maintain journalistic standards in your writing."
+                    "content" => "You are a helpful assistant"
                 ),
                 array("role" => "user", "content" => $prompt)
             );
             $body = array('messages' => $messages);
             return $this->generate('chat', $body, $args);
+            
         } else {
             // Traditional model: use prompt
             return $this->generate('completion', array('prompt' => $prompt), $args);
         }
     }
     
-    public function generate_summary($draft) {
-        $body = array(
-            'input' => $draft,
-            'instruction' => "You're a professional editor with the expertise to condense lengthy news articles into clear, concise summaries. Please summarize the following news article.",
-            'model' => 'text-davinci-edit-001',
-        );
-        return $this->generate('edit', $body);
-    }    
-    
+    public function generate_keywords($item, $num_keywords = 10, $args = array()) {
+        $prompt = "Generate long-tail keywords for {$item}:";
+        $completion = $this->generate_completion($prompt, $args);
+            
+        // Parse out the keywords from the completion
+        $keywords = array_map(function($line) {
+            // Remove digits and dots at the start of the line
+            $line = preg_replace('/^\d+\.\s+/', '', $line);
+            // Remove quotes around the keywords
+            $line = trim($line, '"');
+            return $line;
+        }, explode("\n", $completion));
+        
+        return $keywords;
+    }
 }

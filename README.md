@@ -1,19 +1,19 @@
-# Luya
+# genwp
 
 ## Description
 
-Luya is a WordPress plugin that utilizes OpenAI models to transform your draft posts. The plugin fetches draft posts, generates a summary of the content using OpenAI, creates a new title and content using AI, and publishes the post automatically.
+genwp is a WordPress plugin that utilizes OpenAI models to transform your draft posts. The plugin fetches draft posts, generates a summary of the content using OpenAI, creates a new title and content using AI, and publishes the post automatically.
 
 ## Installation
 
 1. Download the plugin files.
 2. Extract the plugin .zip file.
-3. Upload the `luya` folder to your `/wp-content/plugins/` directory.
+3. Upload the `genwp` folder to your `/wp-content/plugins/` directory.
 4. Activate the plugin from the "Plugins" page in WordPress.
 
 ## Usage
 
-Luya runs automatically using WordPress Cron. It fetches draft posts one by one and processes them through OpenAI to create new content from the existing one. After the draft is processed and a new title assinged, Luya publishes the post.
+genwp runs automatically using WordPress Cron. It fetches draft posts one by one and processes them through OpenAI to create new content from the existing one. After the draft is processed and a new title assinged, genwp publishes the post.
 
 ## Features
 
@@ -39,7 +39,7 @@ Configure the plugin settings by adding your OpenAI API key.
 
 ## License
 
-Luya is licensed under GPL v2 or later. See the `LICENSE` file for more details.
+genwp is licensed under GPL v2 or later. See the `LICENSE` file for more details.
 
 ## Author
 

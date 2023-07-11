@@ -1,25 +1,26 @@
 <?php
-namespace Luya;
 
-class Luya_Cron {
+namespace genwp;
+
+class genwp_Cron {
     public function __construct() {
-        add_filter('cron_schedules', array(__CLASS__, 'luya_add_cron_interval'));
+        add_filter('cron_schedules', array(__CLASS__, 'genwp_add_cron_interval'));
 
-        if (!wp_next_scheduled('luya_cron')) {
-            wp_schedule_event(time(), 'every_five_minutes', 'luya_cron');
+        if (!wp_next_scheduled('genwp_cron')) {
+            wp_schedule_event(time(), 'every_five_minutes', 'genwp_cron');
         }
-        add_action('luya_cron', [$this, 'cron_callback']);
+        add_action('genwp_cron', [$this, 'cron_callback']);
     }
 
     public function cron_callback() {
         // Check if there is an already running cron job
-        $luya_cron_running = get_option('luya_cron_running', false);
+        $genwp_cron_running = get_option('genwp_cron_running', false);
 
-        if ($luya_cron_running != false) {
+        if ($genwp_cron_running != false) {
             // Check if the cron is running for more than 5 minutes
-            if (time() - $luya_cron_running > 300) {
+            if (time() - $genwp_cron_running > 300) {
                 // More than 5 minutes, delete the option
-                delete_option('luya_cron_running');
+                delete_option('genwp_cron_running');
             } else {
                 // Less than 5 minutes, exit
                 return;
@@ -27,41 +28,31 @@ class Luya_Cron {
         }
 
         // Set that a cron is running and set the value to the time it is running on 
-        update_option('luya_cron_running', time());
+        update_option('genwp_cron_running', time());
 
+        // Instantiate the OpenAIGenerator, genWP_Db, and genwp_Writer classes
         $ai_generator = new OpenAIGenerator();
-        $luya_drafts = new Luya_Drafts($ai_generator);
-        $luya_publisher = new Luya_Publisher($luya_drafts);
-        $drafts = $luya_drafts->luya_fetch_posts();
+        $genwpdb = new genWP_Db();
+        $writer = new genwp_Writer($ai_generator, $genwpdb);
         
-        if(empty($drafts)) {
-            error_log("No drafts or pending posts found.");
-            return;
-        }
+        // Get the selected keywords from the WordPress options
+        $keywords = get_option('genwp_selected_keywords', []);
         
-        // Take only the first draft from the list
-        $draft = $drafts[0];
-        
-        $current_user_id = $draft->post_author;
+        // Generate an article for the first keyword in the list
+        if (!empty($keywords)) {
+            $keyword = array_shift($keywords);
+            $writer->gen_article($keyword);
 
-        // Check if the post author can publish posts
-        $user = get_userdata($current_user_id);
-        
-        if (in_array('author', (array) $user->roles) || in_array('editor', (array) $user->roles) || in_array('administrator', (array) $user->roles)) {
-            $summary = $luya_drafts->summarize_post($draft->ID);
-            $luya_drafts->rewrite_and_update_title($draft->ID);
-            $luya_drafts->update_content($draft->ID, $summary);
-            $luya_publisher->edit_and_publish_post($draft->ID, $current_user_id);
-        } else {
-            error_log("User {$current_user_id} is not allowed to publish posts.");
+            // Update the selected keywords option
+            update_option('genwp_selected_keywords', $keywords);
         }
 
         // Delete the option flag that the cron job is running
-        delete_option('luya_cron_running');
+        delete_option('genwp_cron_running');
     }
 
     // Add custom cron schedule
-    public static function luya_add_cron_interval($schedules) {
+    public static function genwp_add_cron_interval($schedules) {
         $schedules['every_five_minutes'] = array(
             'interval' => 5*60,
             'display' => __('Every 5 minutes')
