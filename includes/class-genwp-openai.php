@@ -22,7 +22,7 @@ class OpenAIGenerator {
 
         $this->api_key = isset($settings['genwp-openai-api-key']) ? $settings['genwp-openai-api-key'] : '';
         $this->model = isset($settings['model']) ? $settings['model'] : 'text-davinci-003';
-        $this->max_tokens = isset($settings['max_tokens']) ? (int) $settings['max_tokens'] : 10000;
+       // $this->max_tokens = isset($settings['max_tokens']) ? (int) $settings['max_tokens'] : 10000;
         $this->temperature = isset($settings['temperature']) ? (float) $settings['temperature'] : 0.7;
         $this->top_p = isset($settings['top_p']) ? (float) $settings['top_p'] : 1.0;
         $this->frequency_penalty = isset($settings['frequency_penalty']) ? (float) $settings['frequency_penalty'] : 0.0;
@@ -42,6 +42,7 @@ class OpenAIGenerator {
         $endpoints = array(
             'chat' => $this->base_url . 'chat/completions',
             'completion' => $this->base_url . 'completions',
+            'image' => $this->base_url . 'images/generations',
         );
         return $endpoints[$endpoint];
     }
@@ -49,9 +50,9 @@ class OpenAIGenerator {
     private function generate($endpoint, $body, $args = array()) {
         $api_url = $this->get_api_url($endpoint);
         
-        if ($endpoint !== 'edit') {
+        if ($endpoint !== 'image') {
             $defaults = array(
-                'max_tokens' => $this->max_tokens,
+                // 'max_tokens' => $this->max_tokens,
                 'model' => $this->model,
                 'temperature' => $this->temperature,
                 'top_p' => $this->top_p,
@@ -86,6 +87,8 @@ class OpenAIGenerator {
         }
 
         $response_body = json_decode(wp_remote_retrieve_body($response), true);
+
+        error_log(print_r($response_body, true));
            
         if (isset($response_body['choices'][0]['text'])) {
             return $response_body['choices'][0]['text'];
@@ -129,5 +132,24 @@ class OpenAIGenerator {
         }, explode("\n", $completion));
         
         return $keywords;
+    }
+
+    public function generate_image($description, $n = 1, $size = '1024x1024', $args = array()) {
+        $body = array(
+            'prompt' => $description,
+            'n' => $n,
+            'size' => $size,
+            'response_format' => 'b64_json',
+        );
+        
+        $response = $this->generate('image', $body, $args);
+        
+        if (isset($response['data'])) {
+            return array_map(function($item) {
+                return $item['b64_json'];
+            }, $response['data']);
+        }
+
+        throw new \Exception('Unexpected API response when generating image');
     }
 }
