@@ -4,19 +4,16 @@ namespace genwp;
 
 use genwp\OpenAIGenerator;
 use genwp\genWP_Db;
-use genwp\GenWP_Dir;
 
 use League\CommonMark\GithubFlavoredMarkdownConverter;
 
 class genwp_Writer {
     private $ai_generator;
     private $genwpdb;
-    private $genwp_dir;
 
-    public function __construct(OpenAIGenerator $ai_generator, genWP_Db $genwpdb, GenWP_Dir $genwp_dir) {
+    public function __construct(OpenAIGenerator $ai_generator, genWP_Db $genwpdb) {
         $this->ai_generator = $ai_generator;
         $this->genwpdb = $genwpdb;
-        $this->genwp_dir = $genwp_dir;
     }
 
     public function genwp_keywords($option) {

@@ -5,22 +5,31 @@ namespace genwp;
 use genwp\OpenAIGenerator;
 use genwp\genWP_Db;
 use genwp\genwp_Writer;
-use genwp\GenWP_Dir;
 
 class genwp_KeyPage {
 
     private $openAI;
     private $genWpWriter;
     private $genWpdb;
-    private $genwp_dir;
 
     public function __construct() {
         $this->openAI = new OpenAIGenerator();
         $this->genWpdb = new genWP_Db();
-        $this->genwp_dir = new GenWP_Dir();
-        $this->genWpWriter = new genwp_Writer($this->openAI, $this->genWpdb, $this->genwp_dir);
+        $this->genWpWriter = new genwp_Writer($this->openAI, $this->genWpdb);
 
         add_action( 'wp_ajax_get_terms', array($this, 'genwp_get_terms') );
+        add_action( 'init', array($this, 'handle_form_submission'));
+    }
+
+    public function handle_form_submission() {
+        if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
+            // Generate keywords
+            $this->genWpWriter->genwp_keywords($_POST);
+    
+            // Redirect to the "Keywords Found" page
+            wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
+            exit;
+        }
     }
 
     public function render() {
@@ -76,15 +85,6 @@ class genwp_KeyPage {
     }    
 
     public function displayForm() {
-        if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
-            // Generate keywords
-            $this->genWpWriter->genwp_keywords($_POST);
-
-            // Redirect to the "Keywords Found" page
-            wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
-            exit;
-        }
-    
         ?>
         <div class="wrap">
             <h1>Generate Keywords</h1>
@@ -98,8 +98,7 @@ class genwp_KeyPage {
             </form>
         </div>
         <?php
-    }    
-
+    }
     
     public function genwp_get_terms() {
         $post_type = $_POST['post_type'];

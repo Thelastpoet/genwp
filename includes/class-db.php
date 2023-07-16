@@ -121,4 +121,22 @@ class genWP_Db {
             );
         }
     }
+
+    /**
+     * Update keyword in the database.
+     *
+     * @param string $old_keyword The old keyword to be updated.
+     * @param string $new_keyword The new keyword to replace the old one.
+     * @return int|false The number of rows updated, or false on error.
+     */
+    public function update_keyword($old_keyword, $new_keyword) {
+        global $wpdb;
+
+        $data = array( 'keyword' => $new_keyword );
+        $where = array( 'keyword' => $old_keyword );
+        $data_format = array( '%s' );
+        $where_format = array( '%s' );
+
+        return $wpdb->update( $this->table_name, $data, $where, $data_format, $where_format );
+    }
 }

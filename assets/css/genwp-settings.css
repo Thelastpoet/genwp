@@ -1,1 +1,5 @@
-/*CSS here */
+/* Found Keywords */
+.keyword.long-text {
+    width: 100%; 
+    overflow: visible;
+}

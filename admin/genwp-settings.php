@@ -26,6 +26,8 @@ class genwp_Settings {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_genwp_scripts'));
 
         add_action('admin_init', array($this, 'article_gen'));
+        add_action('wp_ajax_genwp_update_keyword', array($this, 'ajax_update_keyword'));
+
 
         $this->genWpdb = new genWP_Db();
     }
@@ -128,11 +130,43 @@ class genwp_Settings {
     }   
     
     public function enqueue_genwp_scripts() {
-        wp_enqueue_style('genwp-settings', plugins_url('../assets/css/genwp-settings.css', __FILE__));
-        wp_enqueue_script('genwp-settings', plugins_url('../assets/js/genwp-settings.js', __FILE__), array('jquery'), null, true); 
-
-        wp_localize_script('genwp-settings', 'genwp_ajax_object', array(
-            'ajaxurl' => admin_url('admin-ajax.php')
+        wp_enqueue_style('genwp-settings', GENWP_PLUGIN_URL . 'assets/css/genwp-settings.css', array(), GenWP::VERSION);
+        wp_enqueue_script('genwp-settings', GENWP_PLUGIN_URL . 'assets/js/genwp-settings.js', array('jquery'), GenWP::VERSION, true);
+        wp_enqueue_script('genwp-keygen', GENWP_PLUGIN_URL . 'assets/js/keygen.js', array('jquery'), GenWP::VERSION, true);
+    
+        wp_localize_script('genwp-keygen', 'genwp_ajax_object', array(
+            'ajaxurl' => admin_url('admin-ajax.php'),
+            'updateKeywordNonce' => wp_create_nonce('genwp_update_keyword'),
         ));
+    }    
+
+    /**
+     * AJAX action handler for updating a keyword.
+     */
+    public function ajax_update_keyword() {
+        // Check the nonce for security.
+        check_ajax_referer('genwp_update_keyword', 'nonce');
+
+        // Get the old and new keyword from the request.
+        $old_keyword = isset($_POST['old_keyword']) ? sanitize_text_field($_POST['old_keyword']) : '';
+        $new_keyword = isset($_POST['new_keyword']) ? sanitize_text_field($_POST['new_keyword']) : '';
+
+        // Update the keyword in the database.
+        $result = $this->genWpdb->update_keyword($old_keyword, $new_keyword);
+
+        if ($result === false) {
+            // The update failed due to a database error.
+            wp_send_json_error(array('message' => 'Could not update the keyword due to a database error.'));
+        } else if ($result === 0) {
+            // No rows were updated. This happens when the old keyword doesn't exist in the database.
+            wp_send_json_error(array('message' => 'The specified keyword does not exist.'));
+        } else {
+            // The update was successful.
+            wp_send_json_success();
+        }
+
+        // Always die in functions echoing AJAX content.
+        wp_die();
     }
+
 }

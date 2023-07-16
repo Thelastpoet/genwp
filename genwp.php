@@ -13,46 +13,51 @@
  * Domain Path: /languages
  */
 
- namespace genwp;
+namespace GenWP;
 
- if (!defined('ABSPATH')) {
-     exit; // Exit if accessed directly.
- }
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly.
+}
 
- class Genwp {
- 
+// Define constants for plugin directory and URL.
+define('GENWP_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('GENWP_PLUGIN_URL', plugin_dir_url(__FILE__));
+
+class GenWP {
+
     const VERSION = '1.0.0';
-    public $PLUGIN_DIR;
-    public $PLUGIN_URL;
- 
+
     public function __construct() {
-        $this->PLUGIN_DIR = plugin_dir_path(__FILE__);
-        $this->PLUGIN_URL = plugin_dir_url(__FILE__);
- 
         $this->includes();
- 
+
         new genwp_Settings();
         new genwp_Cron();
 
         register_activation_hook(__FILE__, array($this, 'activate_plugin'));
     }
- 
-    private function includes() {
-        require_once $this->PLUGIN_DIR . 'includes/class-genwp-openai.php';
-        require_once $this->PLUGIN_DIR . 'admin/class-genwp-settings.php';
-        require_once $this->PLUGIN_DIR . 'includes/class-genwp-writer.php';
-        require_once $this->PLUGIN_DIR . 'includes/class-genwp-db.php';
-        require_once $this->PLUGIN_DIR . 'includes/cron.php';
-        require_once $this->PLUGIN_DIR . 'admin/partials/gen-admin.php';
-        require_once $this->PLUGIN_DIR . 'admin/partials/gen-key-table.php';
-        require_once $this->PLUGIN_DIR . 'includes/class-genwp-dir.php';
 
-        require_once $this->PLUGIN_DIR . 'vendor/autoload.php';
+    /**
+     * Include required files.
+     */
+    private function includes() {
+        require_once GENWP_PLUGIN_DIR . 'includes/class-openai.php';
+        require_once GENWP_PLUGIN_DIR . 'admin/genwp-settings.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/class-writer.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/class-db.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/cron.php';
+        require_once GENWP_PLUGIN_DIR . 'admin/partials/gen-admin.php';
+        require_once GENWP_PLUGIN_DIR . 'admin/partials/keywords-table.php';
+
+        require_once GENWP_PLUGIN_DIR . 'vendor/autoload.php';
     }
 
+    /**
+     * Activate the plugin.
+     */
     public function activate_plugin() {
-        $genwp_db = new genWP_Db();
-        $genwp_db->create_table();
+        $db = new genWP_Db();
+        $db->create_table();
     }
 }
-new genwp();
+
+new GenWP();

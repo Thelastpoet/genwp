@@ -83,10 +83,12 @@ class Gen_Key_Table extends \WP_List_Table {
     public function column_default($item, $column_name) {
         switch ($column_name) {
             case 'keyword':
-                return $item['keyword']; 
+            // Form input
+            return sprintf('<input type="text" class="keyword-input long-text" data-keyword="%s" value="%s" readonly />', $item['keyword'], $item['keyword']);
+            
             case 'actions':
-                // Display an edit button
-                return sprintf('<a href="?page=%s&action=%s&keyword=%s">Edit</a>', 'edit_keyword', 'edit', $item['keyword']);
+                // Display a "Quick Edit" and "Save" button
+                return sprintf('<a href="#" class="quick-edit-button" data-keyword="%s">Quick Edit</a> <a style="display:none;" href="#" class="quick-save-button" data-keyword="%s">Save</a>', $item['keyword'], $item['keyword']);         
             default:
                 return print_r($item, true);
         }
