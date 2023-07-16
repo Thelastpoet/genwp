@@ -33,7 +33,8 @@ class genwp_Cron {
         // Instantiate the OpenAIGenerator, genWP_Db, and genwp_Writer classes
         $ai_generator = new OpenAIGenerator();
         $genwpdb = new genWP_Db();
-        $writer = new genwp_Writer($ai_generator, $genwpdb);
+        $genwp_dir = new genWP_Dir();
+        $writer = new genwp_Writer($ai_generator, $genwpdb, $genwp_dir);
         
         // Get the selected keywords from the WordPress options
         $keywords = get_option('genwp_selected_keywords', []);

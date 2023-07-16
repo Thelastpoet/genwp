@@ -87,13 +87,15 @@ class OpenAIGenerator {
         }
 
         $response_body = json_decode(wp_remote_retrieve_body($response), true);
-
-        error_log(print_r($response_body, true));
            
         if (isset($response_body['choices'][0]['text'])) {
             return $response_body['choices'][0]['text'];
         } elseif (isset($response_body['choices'][0]['message']['content'])) {
             return $response_body['choices'][0]['message']['content'];
+        } elseif (isset($response_body['data'][0]['url'])) {
+            return $response_body['data'][0]['url'];
+        } elseif (isset($response_body['data'][0]['b64_json'])) {
+            return $response_body['data'][0]['b64_json'];
         }
 
         throw new \Exception('Unexpected API response');
@@ -134,22 +136,25 @@ class OpenAIGenerator {
         return $keywords;
     }
 
-    public function generate_image($description, $n = 1, $size = '1024x1024', $args = array()) {
+    public function generate_image($description, $n = 1, $size = '256x256', $args = array()) {
         $body = array(
             'prompt' => $description,
             'n' => $n,
             'size' => $size,
-            'response_format' => 'b64_json',
+            'response_format' => 'url',
         );
-        
+    
         $response = $this->generate('image', $body, $args);
-        
-        if (isset($response['data'])) {
-            return array_map(function($item) {
-                return $item['b64_json'];
-            }, $response['data']);
+    
+        if (is_string($response)) {
+            return array($response);
         }
-
+    
+        return array_map(function($item) {
+            return $item['url'];
+        }, $response['data']);
+    
         throw new \Exception('Unexpected API response when generating image');
     }
+    
 }

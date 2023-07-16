@@ -41,12 +41,11 @@
         require_once $this->PLUGIN_DIR . 'includes/class-genwp-openai.php';
         require_once $this->PLUGIN_DIR . 'admin/class-genwp-settings.php';
         require_once $this->PLUGIN_DIR . 'includes/class-genwp-writer.php';
-        require_once $this->PLUGIN_DIR . 'includes/class-genwp-publisher.php';
-        require_once $this->PLUGIN_DIR . 'admin/class-genwp-db.php';
+        require_once $this->PLUGIN_DIR . 'includes/class-genwp-db.php';
         require_once $this->PLUGIN_DIR . 'includes/cron.php';
         require_once $this->PLUGIN_DIR . 'admin/partials/gen-admin.php';
         require_once $this->PLUGIN_DIR . 'admin/partials/gen-key-table.php';
-        include_once $this->PLUGIN_DIR . 'admin/content-settings.php';
+        require_once $this->PLUGIN_DIR . 'includes/class-genwp-dir.php';
 
         require_once $this->PLUGIN_DIR . 'vendor/autoload.php';
     }
@@ -56,6 +55,4 @@
         $genwp_db->create_table();
     }
 }
-// Disable the wpautop filter
-remove_filter('the_content', 'wpautop');
 new genwp();

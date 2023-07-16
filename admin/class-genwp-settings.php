@@ -21,18 +21,19 @@ class genwp_Settings {
     public function __construct() {
         add_action('admin_menu', array($this, 'add_options_page'));
         add_action('admin_init', array($this, 'register_settings'));
+        add_action('admin_init', [new genwp_KeyPage(), 'registerSettings']);
 
         add_action('admin_enqueue_scripts', array($this, 'enqueue_genwp_scripts'));
 
-        add_action('admin_init', array($this, 'handle_form_submission'));
+        add_action('admin_init', array($this, 'article_gen'));
 
         $this->genWpdb = new genWP_Db();
     }
-
-    public function enqueue_genwp_scripts() {
-        wp_enqueue_style('genwp-settings-css', plugins_url('../assets/css/genwp-settings.css', __FILE__));
-        wp_enqueue_script('genwp-settings-js', plugins_url('../assets/js/genwp-settings.js', __FILE__), array('jquery'), null, true);
-        
+    
+    public function add_options_page() {
+        add_menu_page($this->page_title, $this->menu_title, $this->capability, $this->menu_slug, array($this, 'display_settings_page'), $this->icon_url);
+        add_submenu_page($this->menu_slug, 'Article Generator', 'Article Generator', $this->capability, 'genwp-article-generator', array($this, 'display_article_gen'));
+        add_submenu_page($this->menu_slug, 'Found Keywords', 'Found Keywords', $this->capability, 'genwp-found-keywords', array($this, 'display_keywords'));
     }
 
     public function register_settings() {
@@ -78,28 +79,35 @@ class genwp_Settings {
             <input type="text" name="<?php echo $this->option_name; ?>[<?php echo esc_attr($field); ?>]" value="<?php echo esc_attr($value); ?>" />
             <?php
         }
-    }
+    }   
 
-    public function add_options_page() {
-        add_menu_page($this->page_title, $this->menu_title, $this->capability, $this->menu_slug, array($this, 'display_settings_page'), $this->icon_url);
-        add_submenu_page($this->menu_slug, 'Article Generator', 'Article Generator', $this->capability, 'genwp-article-generator', array($this, 'display_article_generator'));
-        add_submenu_page($this->menu_slug, 'Found Keywords', 'Found Keywords', $this->capability, 'genwp-found-keywords', array($this, 'display_found_keywords'));
-    }
+    public function display_settings_page() { ?>
+        <div class="wrap">
+            <h2><?php echo esc_html(get_admin_page_title()); ?></h2>
+            <form action="options.php" method="post">
+                <?php 
+                settings_fields('genwp-openai-settings');
+                do_settings_sections('genwp-openai-settings');
+                submit_button('Save Settings'); 
+                ?>
+            </form>
+        </div>
+        <?php
+    } 
 
-    public function handle_form_submission() {
+    public function article_gen() {
         if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["generate_keywords"])) {
-            error_log('handleFormSubmission called');
             $adminPage = new genwp_KeyPage();
             $adminPage->handleFormSubmission();
         }
     }
 
-    public function display_article_generator() {
+    public function display_article_gen() {
         $adminPage = new genwp_KeyPage();
         $adminPage->render();
     }
 
-    public function display_found_keywords() {
+    public function display_keywords() {
         // Get the saved keywords from database
         $keywords = $this->genWpdb->get_keywords();
         
@@ -118,18 +126,13 @@ class genwp_Settings {
         // Close the form tag after the table
         echo '</form>';
     }   
+    
+    public function enqueue_genwp_scripts() {
+        wp_enqueue_style('genwp-settings', plugins_url('../assets/css/genwp-settings.css', __FILE__));
+        wp_enqueue_script('genwp-settings', plugins_url('../assets/js/genwp-settings.js', __FILE__), array('jquery'), null, true); 
 
-    public function display_settings_page() { ?>
-        <div class="wrap">
-            <h2><?php echo esc_html(get_admin_page_title()); ?></h2>
-            <form action="options.php" method="post">
-                <?php 
-                settings_fields('genwp-openai-settings');
-                do_settings_sections('genwp-openai-settings');
-                submit_button('Save Settings'); 
-                ?>
-            </form>
-        </div>
-        <?php
-    }   
+        wp_localize_script('genwp-settings', 'genwp_ajax_object', array(
+            'ajaxurl' => admin_url('admin-ajax.php')
+        ));
+    }
 }
