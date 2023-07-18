@@ -5,24 +5,27 @@ namespace genwp;
 use genwp\OpenAIGenerator;
 use genwp\genWP_Db;
 use genwp\genwp_Writer;
+use genwp\FeaturedImage;
 
 class genwp_KeyPage {
 
     private $openAI;
     private $genWpWriter;
     private $genWpdb;
+    private $featured_image;
 
     public function __construct() {
         $this->openAI = new OpenAIGenerator();
         $this->genWpdb = new genWP_Db();
-        $this->genWpWriter = new genwp_Writer($this->openAI, $this->genWpdb);
+        $this->featured_image = new FeaturedImage($this->openAI);
+        $this->genWpWriter = new genwp_Writer($this->openAI, $this->genWpdb, $this->featured_image);
 
         add_action( 'wp_ajax_get_terms', array($this, 'genwp_get_terms') );
         add_action( 'init', array($this, 'handle_form_submission'));
     }
 
     public function handle_form_submission() {
-        if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
+        if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"]) && isset($_POST["gen_keywords"])) {
             // Generate keywords
             $this->genWpWriter->genwp_keywords($_POST);
     
@@ -31,6 +34,7 @@ class genwp_KeyPage {
             exit;
         }
     }
+    
 
     public function render() {
         // Display settings form.
@@ -92,7 +96,9 @@ class genwp_KeyPage {
                 <?php
                 settings_fields('genwp-article-generator');
                 do_settings_sections('genwp-article-generator');
-    
+                ?>
+                <input type="hidden" name="gen_keywords" value="1">
+                <?php
                 submit_button('Generate Keywords', 'primary', 'submit');
                 ?>
             </form>

@@ -146,14 +146,14 @@ class genwp_Settings {
     public function ajax_update_keyword() {
         // Check the nonce for security.
         check_ajax_referer('genwp_update_keyword', 'nonce');
-
+    
         // Get the old and new keyword from the request.
         $old_keyword = isset($_POST['old_keyword']) ? sanitize_text_field($_POST['old_keyword']) : '';
         $new_keyword = isset($_POST['new_keyword']) ? sanitize_text_field($_POST['new_keyword']) : '';
-
+    
         // Update the keyword in the database.
         $result = $this->genWpdb->update_keyword($old_keyword, $new_keyword);
-
+    
         if ($result === false) {
             // The update failed due to a database error.
             wp_send_json_error(array('message' => 'Could not update the keyword due to a database error.'));
@@ -161,10 +161,17 @@ class genwp_Settings {
             // No rows were updated. This happens when the old keyword doesn't exist in the database.
             wp_send_json_error(array('message' => 'The specified keyword does not exist.'));
         } else {
-            // The update was successful.
-            wp_send_json_success();
+            // Update keyword in genwp_selected_keywords option
+            $selected_keywords = get_option('genwp_selected_keywords', []);
+            if(($key = array_search($old_keyword, $selected_keywords)) !== false) {
+                $selected_keywords[$key] = $new_keyword;
+                update_option('genwp_selected_keywords', $selected_keywords);
+            }
+    
+            // The update was successful. Return the new keyword.
+            wp_send_json_success(array('new_keyword' => $new_keyword));
         }
-
+    
         // Always die in functions echoing AJAX content.
         wp_die();
     }

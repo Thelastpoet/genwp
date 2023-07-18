@@ -33,7 +33,7 @@ jQuery(document).ready(function($) {
         }, function(response) {
             if (response.success) {
                 // Update the keyword data attribute and make the input field read-only
-                inputField.data('keyword', newKeyword).prop('readonly', true);
+                inputField.data('keyword', response.data.new_keyword).prop('readonly', true);
 
                 // Hide the Save button and show the Quick Edit button
                 $('.quick-save-button[data-keyword="' + keyword + '"]').hide().prev('.quick-edit-button').show().data('keyword', newKeyword);

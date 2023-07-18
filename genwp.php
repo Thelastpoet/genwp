@@ -47,6 +47,7 @@ class GenWP {
         require_once GENWP_PLUGIN_DIR . 'includes/cron.php';
         require_once GENWP_PLUGIN_DIR . 'admin/partials/gen-admin.php';
         require_once GENWP_PLUGIN_DIR . 'admin/partials/keywords-table.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/class-images.php';
 
         require_once GENWP_PLUGIN_DIR . 'vendor/autoload.php';
     }

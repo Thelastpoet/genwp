@@ -2,18 +2,25 @@
 
 namespace genwp;
 
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly.
+}
+
 use genwp\OpenAIGenerator;
 use genwp\genWP_Db;
+use genwp\FeaturedImage;
 
 use League\CommonMark\GithubFlavoredMarkdownConverter;
 
 class genwp_Writer {
     private $ai_generator;
     private $genwpdb;
+    private $featured_image;
 
-    public function __construct(OpenAIGenerator $ai_generator, genWP_Db $genwpdb) {
+    public function __construct(OpenAIGenerator $ai_generator, genWP_Db $genwpdb, FeaturedImage $featured_image) {
         $this->ai_generator = $ai_generator;
         $this->genwpdb = $genwpdb;
+        $this->featured_image = $featured_image;
     }
 
     public function genwp_keywords($option) {
@@ -85,18 +92,25 @@ class genwp_Writer {
     }
 
     private function generate_content($keyword, $args) {
-        // Modified prompt
-        $prompt = "Write a 2500-word well-structured, SEO-optimized article about '{$keyword}' in Markdown format, using CommonMark syntax. Start with a catchy, SEO-optimized level 1 heading (`#`) that includes power words to engage the reader. Use other heading tags (such as `##`, `###`, etc.) to organize the content into sections and sub-sections. Include headings, subheadings, tables, bullet points, etc. You must include two to three SEO optimized introductory paragraphs, and detailed three to five paragraphs under each unnumbered heading and subheading.";
-    
+        // Revised prompt
+        $prompt = "Write a 3000-word SEO-optimized article about '{$keyword}' using the following guidelines:\n\n- Start with two to three SEO-optimized introductory paragraphs that provide an overview of '{$keyword}'.\n- Use a human-like writing style and incorporate personification to add more emotive language and bring out a more expressive tone.\n- Always use Active Voice and vary sentence lengths and use different sentence structures to create an interesting flow and pace.\n- Use Markdown format, specifically the CommonMark syntax.\n- Begin with a catchy, SEO-optimized level 1 heading (`#`) that includes power words to captivate the reader.\n- Organize the content into sections and sub-sections using other heading tags (`##`, `###`, etc.).\n- Use tables, bullet points, unordered lists, bold text, underlined text, and code blocks to present information in a structured and organized manner.\n- Include detailed three to five paragraphs under each heading and subheading that provide in-depth information about the topic.\n";
+        
         $content = $this->ai_generator->generate_completion($prompt, $args);
     
         // Extract the title from the first level 1 heading
         preg_match('/^#\s+(.*)$/m', $content, $matches);
         $title = $matches[1];
+
+        // Check if the title contains asterisks at the beginning or end, and remove them if found
+        if (strpos($title, '*') !== false) {
+            $title = preg_replace('/^\*+|\*+$/', '', $title);
+        }
+
         $content = preg_replace('/^#\s+.*$\n/m', '', $content);
     
         return array('title' => $title, 'content' => $content);
-    }    
+    }
+    
 
     private function format_content($content) {
         // Use CommonMark to format the content
@@ -117,12 +131,14 @@ class genwp_Writer {
         $term = get_term_by('name', $taxonomy_term, $valid_taxonomy);
     
         // Set a default author ID
-        $author_id = get_term_meta($term->term_id, 'assigned_user', true);
+        $author_id = 1;
     
         if ($term) {
-            // If there is no user assigned in the settings, use the default one
-            if (empty($author_id)) {
-                $author_id = 1;
+            $assigned_user = get_term_meta($term->term_id, 'assigned_user', true);
+
+            // If there is a user assigned in settings, we use that user
+            if ( !empty($assigned_user)) {
+                $author_id = $assigned_user;
             }
         }
     
@@ -148,56 +164,5 @@ class genwp_Writer {
         }
     
         return $post_id;
-    }
-
-    public function set_featured_image( $keyword, $post_id ) {
-        $description = "Generate a realistic high quality image depicting the concept of '{$keyword}', preferably in vibrant colors.";
-    
-        // Generate image with OpenAI
-        $image_urls = $this->ai_generator->generate_image( $description );
-    
-        if ( ! is_array( $image_urls ) || count( $image_urls ) === 0 ) {
-            return new WP_Error( 'no_image_url', 'No image URL was generated' );
-        }
-    
-        $image_url = esc_url_raw( $image_urls[0] );
-    
-        // Download the image and add it to the media library
-        require_once( ABSPATH . 'wp-admin/includes/media.php' );
-        require_once( ABSPATH . 'wp-admin/includes/file.php' );
-        require_once( ABSPATH . 'wp-admin/includes/image.php' );
-        $result = media_sideload_image( $image_url, $post_id, $keyword, 'id' );
-    
-        // Check for errors
-        if ( is_wp_error( $result ) ) {
-            return new WP_Error( 'download_error', 'Error downloading image' );
-        }
-    
-        // Get the attachment ID of the downloaded image
-        $attachments = get_posts( array(
-            'post_parent' => $post_id,
-            'post_type' => 'attachment',
-            'post_mime_type' => 'image',
-            'orderby' => 'date',
-            'order' => 'DESC',
-            'numberposts' => 1,
-        ) );
-        if ( empty( $attachments ) ) {
-            return new WP_Error( 'attachment_error', 'Error getting attachment ID' );
-        }
-        $attach_id = $attachments[0]->ID;
-
-        // Update the author of the attachment
-        $author_id = get_post_field( 'post_author', $post_id );
-        wp_update_post(
-            array(
-                'ID' => $attach_id,
-                'post_author' => $author_id,
-            )
-        );
-    
-        // Set the downloaded image as the featured image for the post
-        set_post_thumbnail( $post_id, $attach_id );
-    }  
-    
+    }    
 }

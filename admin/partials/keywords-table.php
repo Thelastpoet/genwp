@@ -37,11 +37,13 @@ class Gen_Key_Table extends \WP_List_Table {
 
         if ($action === 'write') {
             // Store the selected keywords as a WordPress option
-            update_option('genwp_selected_keywords', $_REQUEST['keywords']);
-
+            $selected_keywords = get_option('genwp_selected_keywords', []);
+            $selected_keywords = array_merge($selected_keywords, $_REQUEST['keywords']);
+            update_option('genwp_selected_keywords', $selected_keywords);
+        
             // Set a transient to show the success message
             set_transient( 'genwp_write_success', true, 5 );
-        }            
+        }                 
 
         // Refresh keywords after deletion
         $this->keywords = $db->get_keywords();
