@@ -68,8 +68,6 @@ class KeywordsUploader {
     
                 // Assume the keyword is in the first column of each row
                 $keyword = sanitize_text_field($data[0]);
-
-                // Additional validation could go here.
     
                 // Add the keyword to the database
                 $this->genwpdb->saveKeywords(array($keyword));
