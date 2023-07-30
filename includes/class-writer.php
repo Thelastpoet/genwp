@@ -9,7 +9,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 use genwp\OpenAIGenerator;
 use genwp\genWP_Db;
 use genwp\FeaturedImage;
-
 use League\CommonMark\GithubFlavoredMarkdownConverter;
 
 class genwp_Writer {
@@ -24,34 +23,32 @@ class genwp_Writer {
     }
 
     public function genwp_keywords($option) {
+        // Generate keywords for each selected term and assign user to it (We won't need it soon)
         $taxonomy = 'category';
         $selectedTerms = $option['genwp_taxonomy_terms'];
         $assignedUser = $option['genwp_assigned_user'];
     
-        // Generate keywords for each selected term and assign user to it
         foreach ($selectedTerms as $termName) {
             $term = get_term_by('name', $termName, $taxonomy);
             if ($term) {
-                $termKeywords = $this->ai_generator->generate_keywords($term->name);
-    
-                // Save keywords to the database
-                $this->genwpdb->saveKeywords($termKeywords, '', $term->name);
-    
-                // Assign user to term
+                $termKeywords = $this->ai_generator->generate_keywords($term->name);    
+                $this->genwpdb->saveKeywords($termKeywords, '', $term->name);    
                 update_term_meta($term->term_id, 'assigned_user', $assignedUser);
             }
         }
     }    
 
     public function gen_article($keyword, $num_words = 2500, $args = array()) {
+        // Initiate generate articles
+
         if (!is_array($args)) {
             $args = array();
         }
         
         $args['max_tokens'] = $num_words;
 
-        // Fetch keyword, title, and taxonomy_term
-        $taxonomy_term = $this->fetch_taxonomy_term($keyword);
+        // Fetch keyword, title, taxonomy_term, user_id and term_id
+        $keyword_data = $this->fetch_keyword_data($keyword);
 
         // Generate the article content and title
         $content_and_title = $this->generate_content($keyword, $args);
@@ -63,14 +60,11 @@ class genwp_Writer {
         // Format the content
         $formatted_content = $this->format_content($content);
 
-        // We will avoid hardcoding this later Please remember me...
-        $valid_taxonomy = 'category';
-
         // Create the new post
-        $post_id = $this->create_post($formatted_content, $title, $taxonomy_term, $valid_taxonomy, $keyword);
+        $post_id = $this->create_post($formatted_content, $title, $keyword_data, $keyword);
 
         // Generate and set the featured image for the post
-        $this->set_featured_image($keyword, $post_id);
+        $this->featured_image->set_featured_image($keyword, $post_id);
 
         // Delete keyword from the database
         $this->genwpdb->delete_keywords(array($keyword));
@@ -78,22 +72,23 @@ class genwp_Writer {
         return $post_id;
     }
 
-    private function fetch_taxonomy_term($keyword) {
+    private function fetch_keyword_data($keyword) {
+        // fetch keyword data from DB
         $data = $this->genwpdb->get_keywords();
-        $taxonomy_term = '';
+        $keyword_data = [];
         foreach ($data as $item) {
             if ($item['keyword'] === $keyword) {
-                $taxonomy_term = $item['taxonomy_term'];
+                $keyword_data = $item;
                 break;
             }
         }
 
-        return $taxonomy_term;
+        return $keyword_data;
     }
 
     private function generate_content($keyword, $args) {
-        // Revised prompt
-        $prompt = "Write a 3000-word SEO-optimized article about '{$keyword}' using the following guidelines:\n\n- Start with two to three SEO-optimized introductory paragraphs that provide an overview of '{$keyword}'.\n- Use a human-like writing style and incorporate personification to add more emotive language and bring out a more expressive tone.\n- Always use Active Voice and vary sentence lengths and use different sentence structures to create an interesting flow and pace.\n- Use Markdown format, specifically the CommonMark syntax.\n- Begin with a catchy, SEO-optimized level 1 heading (`#`) that includes power words to captivate the reader.\n- Organize the content into sections and sub-sections using other heading tags (`##`, `###`, etc.).\n- Use tables, bullet points, unordered lists, bold text, underlined text, and code blocks to present information in a structured and organized manner.\n- Include detailed three to five paragraphs under each heading and subheading that provide in-depth information about the topic.\n";
+        // We get the article from AI
+        $prompt = sprintf("Write a 2500-word SEO-optimized article about '%s'. Begin with a catchy, SEO-optimized level 1 heading (`#`) that includes power words to captivate the reader. Follow with several introductory paragraphs that provide an overview of the topic. Organize the rest of the article into at least 10 sections using heading tags (`##`) and include sub-sections as needed using lower-level heading tags (`###`, `####`, etc.). Each section should be approximately 450 words in length. Include detailed paragraphs under each heading that provide in-depth information about the topic. Use bullet points, unordered lists, bold text, underlined text, and code blocks to enhance readability and engagement.", $keyword);
         
         $content = $this->ai_generator->generate_completion($prompt, $args);
     
@@ -109,8 +104,7 @@ class genwp_Writer {
         $content = preg_replace('/^#\s+.*$\n/m', '', $content);
     
         return array('title' => $title, 'content' => $content);
-    }
-    
+    }    
 
     private function format_content($content) {
         // Use CommonMark to format the content
@@ -126,24 +120,21 @@ class genwp_Writer {
         return $formatted_content;
     } 
 
-    private function create_post($content, $title, $taxonomy_term, $valid_taxonomy, $keyword) {
-        // Retrieve the term by its name
-        $term = get_term_by('name', $taxonomy_term, $valid_taxonomy);
-    
+    private function create_post($content, $title, $keyword_data, $keyword) {    
+        // Let's now write the article
+
         // Set a default author ID
         $author_id = 1;
     
-        if ($term) {
-            $assigned_user = get_term_meta($term->term_id, 'assigned_user', true);
-
-            // If there is a user assigned in settings, we use that user
-            if ( !empty($assigned_user)) {
-                $author_id = $assigned_user;
-            }
+        if ($keyword_data) {
+            $author_id = $keyword_data['user_id'];
+    
+            // Retrieve the term by its ID
+            $term = get_term($keyword_data['term_id']);
         }
-    
+        
         $slug = sanitize_title($keyword);
-    
+        
         $postarr = array(
             'post_title'    => wp_strip_all_tags($title),
             'post_content'  => $content,
@@ -152,17 +143,15 @@ class genwp_Writer {
             'post_author'   => $author_id,
             'post_name'     => $slug,
         );
-    
+        
         $post_id = wp_insert_post($postarr);
-    
-        if (!is_wp_error($post_id) && !empty($taxonomy_term)) {
-            wp_set_object_terms($post_id, array($taxonomy_term), $valid_taxonomy);
-    
+        
+        if (!is_wp_error($post_id) && !empty($term)) {
+            wp_set_object_terms($post_id, $term->term_id, $term->taxonomy);
             $def_term_id = 1;
-    
-            wp_remove_object_terms($post_id, $def_term_id, $valid_taxonomy);
+            wp_remove_object_terms($post_id, $def_term_id, 'category');
         }
-    
+        
         return $post_id;
-    }    
+    }        
 }

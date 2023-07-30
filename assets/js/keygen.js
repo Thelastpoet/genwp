@@ -44,4 +44,28 @@ jQuery(document).ready(function($) {
             alert('An error occurred while trying to save the keyword.');
         });
     });
+
+    // Save Map Button
+    $(document).on('click', "input[type='submit'][name^='save_map']", function(e) {
+        e.preventDefault();
+
+        var keyword = $(this).attr('name').match(/\[(.*)\]/)[1];
+        var user_id = $(`select[name='user_select[${keyword}]']`).val();
+        var term_id = $(`select[name='category-select[${keyword}]']`).val();
+
+        $.post(genwp_ajax_object.ajaxurl, {
+            action: 'genwp_save_map',
+            nonce: genwp_ajax_object.saveMapNonce,
+            keyword: keyword,
+            user_id: user_id,
+            term_id: term_id
+        }, function(response) {
+            if(response.success) {
+                alert('Keyword mapping was successful. Reload Page');
+            } else {
+                alert('Keyword mapping failed. ' + response.data.message);
+            }            
+        });
+    });
+
 });

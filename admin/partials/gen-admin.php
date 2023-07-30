@@ -6,6 +6,8 @@ use genwp\OpenAIGenerator;
 use genwp\genWP_Db;
 use genwp\genwp_Writer;
 use genwp\FeaturedImage;
+use genwp\OpenverseImageGenerator;
+use genwp\KeywordsUploader;
 
 class genwp_KeyPage {
 
@@ -13,28 +15,54 @@ class genwp_KeyPage {
     private $genWpWriter;
     private $genWpdb;
     private $featured_image;
+    private $openverse_generator;
 
     public function __construct() {
         $this->openAI = new OpenAIGenerator();
-        $this->genWpdb = new genWP_Db();
-        $this->featured_image = new FeaturedImage($this->openAI);
-        $this->genWpWriter = new genwp_Writer($this->openAI, $this->genWpdb, $this->featured_image);
+        $this->genWpdb = new genWP_Db();        
+        $this->openverse_generator = new OpenverseImageGenerator('images');
+        $this->featured_image = new FeaturedImage($this->openverse_generator);
+        $this->keywordUploader = new KeywordsUploader($this->genWpdb);
+        $this->genWpWriter = new genwp_Writer($this->openAI, $this->genWpdb, $this->featured_image, $this->openverse_generator);
 
         add_action( 'wp_ajax_get_terms', array($this, 'genwp_get_terms') );
         add_action( 'init', array($this, 'handle_form_submission'));
     }
 
     public function handle_form_submission() {
-        if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"]) && isset($_POST["gen_keywords"])) {
-            // Generate keywords
-            $this->genWpWriter->genwp_keywords($_POST);
+        if ($_SERVER["REQUEST_METHOD"] === "POST") {
+            if (isset($_POST["submit"]) && isset($_POST["gen_keywords"])) {
+                // Generate keywords
+                $this->genWpWriter->genwp_keywords($_POST);
     
-            // Redirect to the "Keywords Found" page
-            wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
-            exit;
+                // Redirect to the "Keywords Found" page
+                wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
+                exit;
+            } elseif (isset($_POST["upload"]) && isset($_FILES["genwp_keyword_file"])) {
+                // Handle the file upload
+                $tmpFilePath = $_FILES["genwp_keyword_file"]["tmp_name"];
+                    
+                try {
+                    $this->keywordUploader->upload_keywords($tmpFilePath);
+    
+                    // Redirect to the "Keywords Found" page after successful upload
+                    wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
+                } catch (\Exception $e) {
+                    // Show an admin notice in WordPress
+                    add_action('admin_notices', function() use ($e) {
+                        echo '<div class="notice notice-error">';
+                        echo '<p>Error uploading keywords: ' . $e->getMessage() . '</p>';
+                        echo '</div>';
+                    });
+
+                    // Debug: Log the error
+                    error_log( "Error uploading keywords: " . $e->getMessage() );
+                }
+    
+                exit;
+            }
         }
-    }
-    
+    }    
 
     public function render() {
         // Display settings form.
@@ -90,21 +118,36 @@ class genwp_KeyPage {
 
     public function displayForm() {
         ?>
-        <div class="wrap">
-            <h1>Generate Keywords</h1>
-            <form method="post" action="">
-                <?php
-                settings_fields('genwp-article-generator');
-                do_settings_sections('genwp-article-generator');
-                ?>
-                <input type="hidden" name="gen_keywords" value="1">
-                <?php
-                submit_button('Generate Keywords', 'primary', 'submit');
-                ?>
+        <div class="wrap genwp-wrap">
+            <h1 class="genwp-main-title">Generate Keywords</h1>
+            <form method="post" action="" enctype="multipart/form-data" class="genwp-form">
+    
+                <div class="genwp-section genwp-section-keywords">
+                    <?php
+                    settings_fields('genwp-article-generator');
+                    do_settings_sections('genwp-article-generator');
+                    ?>
+                    <input type="hidden" name="gen_keywords" value="1">
+                    <!-- Added Heading -->
+                    <h2 class="genwp-sub-heading">Generate Keywords from Terms</h2>
+                    <?php
+                    submit_button('Generate Keywords', 'primary genwp-submit-button', 'submit');
+                    ?>
+                </div>
+    
+                <div class="genwp-section genwp-section-upload">
+                    <!-- Added Heading -->
+                    <h2 class="genwp-sub-heading">Upload Keywords CSV</h2>
+                    <?php
+                    $this->renderFileUpload(); // Include the file upload field
+                    submit_button('Upload CSV', 'secondary genwp-upload-button', 'upload');
+                    ?>
+                </div>
+    
             </form>
         </div>
         <?php
-    }
+    }    
     
     public function genwp_get_terms() {
         $post_type = $_POST['post_type'];
@@ -120,4 +163,11 @@ class genwp_KeyPage {
         wp_send_json_success( $data );
     }
 
+    public function renderFileUpload() {
+        ?>
+        <label for="genwp-keyword-file">Upload CSV:</label>
+        <input type="file" id="genwp-keyword-file" name="genwp_keyword_file" accept=".csv">
+        <p class="description">Please upload a CSV file with one keyword per line.</p>
+        <?php
+    }    
 }

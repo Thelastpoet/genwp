@@ -15,38 +15,25 @@ class Gen_Key_Table extends \WP_List_Table {
             'plural' => 'keywords',
             'ajax' => false
         ));
-        $this->keywords = $keywords;
 
-        add_action( 'admin_notices', 'genwp_show_admin_notices' );
+        $db = new \genwp\genWP_Db(); 
+        $this->process_bulk_action($db);
+
+        $this->keywords = $keywords;
     }
+
+    // Helper function to generate a dropdown - -We will move this to functions file
+    private function generate_dropdown($items, $selected_value, $class, $value_field, $label_field, $keyword) {
+        $options = '';
+        foreach ($items as $item) {
+            $selected = $item->{$value_field} == $selected_value ? 'selected' : '';
+            $options .= sprintf('<option value="%s" %s>%s</option>', $item->{$value_field}, $selected, $item->{$label_field});
+        }
+        return sprintf('<select name="%s[%s]" class="%s">%s</select>', $class, sanitize_text_field($keyword), $class, $options);
+    }    
 
     public function prepare_items() {
         $db = new \genwp\genWP_Db();
-        $genwpCron = new \genwp\genwp_Cron();
-    
-        $action = $this->current_action();
-    
-        // verify the nonce field
-        if (isset($_REQUEST['keywords']) && is_array($_REQUEST['keywords']) && !wp_verify_nonce($_POST['bulk-delete-nonce'], 'bulk-delete')) {
-            die('Invalid request');
-        }
-
-        if ($action === 'delete') {
-            $db->delete_keywords($_REQUEST['keywords']);
-        }
-
-        if ($action === 'write') {
-            // Store the selected keywords as a WordPress option
-            $selected_keywords = get_option('genwp_selected_keywords', []);
-            $selected_keywords = array_merge($selected_keywords, $_REQUEST['keywords']);
-            update_option('genwp_selected_keywords', $selected_keywords);
-        
-            // Set a transient to show the success message
-            set_transient( 'genwp_write_success', true, 5 );
-        }                 
-
-        // Refresh keywords after deletion
-        $this->keywords = $db->get_keywords();
     
         $columns = $this->get_columns();
         $this->_column_headers = array($columns, array(), array());
@@ -69,9 +56,12 @@ class Gen_Key_Table extends \WP_List_Table {
 
     public function get_columns() {
         return array(
-            'cb' => '<input type="checkbox" onclick="jQuery(\'input[name*=\\\'keywords\\\']\').attr(\'checked\', this.checked);" />',
-            'keyword' => 'Keyword',
-            'actions' => 'Actions'
+            'cb' => '<input type="checkbox" />',
+            'keyword' => __('Keyword', 'genwp'),
+            'user' => __('Post Author', 'genwp'),
+            'category' => __('Category Term', 'genwp'),
+            'actions' => __('Actions', 'genwp'),
+            'mapping' => __('Keyword Mapping', 'genwp')
         );
     }
 
@@ -86,11 +76,29 @@ class Gen_Key_Table extends \WP_List_Table {
         switch ($column_name) {
             case 'keyword':
             // Form input
-            return sprintf('<input type="text" class="keyword-input long-text" data-keyword="%s" value="%s" readonly />', $item['keyword'], $item['keyword']);
+            return sprintf('<input type="text" class="keyword-input long-text" data-keyword="%s" value="%s" readonly />', sanitize_text_field($item['keyword']), sanitize_text_field($item['keyword']));
+                
+            case 'user':
+                // Dropdown with users
+                $users = get_users();
+                return $this->generate_dropdown($users, $item['user_id'], 'user_select', 'ID', 'display_name', $item['keyword']);
+
+            case 'category':
+                // Dropdown with categories
+                $args = array(
+                    'taxonomy' => 'category',
+                    'hide_empty' => false,
+                );
+                $categories = get_terms($args);
+                return $this->generate_dropdown($categories, $item['term_id'], 'category-select', 'term_id', 'name', $item['keyword']);
             
             case 'actions':
                 // Display a "Quick Edit" and "Save" button
                 return sprintf('<a href="#" class="quick-edit-button" data-keyword="%s">Quick Edit</a> <a style="display:none;" href="#" class="quick-save-button" data-keyword="%s">Save</a>', $item['keyword'], $item['keyword']);         
+            
+            case 'mapping':
+                return sprintf('<input type="submit" name="save_map[%s]" class="button action" value="Save Map"/>', $item['keyword']);
+            
             default:
                 return print_r($item, true);
         }
@@ -99,19 +107,47 @@ class Gen_Key_Table extends \WP_List_Table {
     function get_bulk_actions() {
         $actions = array(
             'delete'    => 'Delete Keywords',
-            'write'    => 'Write Articles'
+            'write'    => 'Write Articles',
         );
         return $actions;
     }
 
-    function genwp_show_admin_notices() {
-        if ( get_transient( 'genwp_write_success' ) ) {
-            ?>
-            <div class="notice notice-success is-dismissible">
-                <p><?php _e( 'Successfully started writing the articles.', 'genwp' ); ?></p>
-            </div>
-            <?php
-            delete_transient( 'genwp_write_success' );
+    private function process_bulk_action($db) {
+        // if action is 'save_map'
+        if (isset($_POST['save_map'])) {
+
+            // Get the keyword
+            $keyword = key($_POST['save_map']);
+
+            // Get new user_id and term_id
+            $user_id = $_POST['user_select'][$keyword];
+            $term_id = $_POST['category-select'][$keyword];
+
+            // Update the association in db
+            $db->update_keyword_mapping($keyword, $user_id, $term_id);
+
+            // Refresh the $this->keywords variable
+            $this->keywords = $db->get_keywords();        
+        } else {
+
+            $action = $this->current_action();
+
+            switch ($action) {
+                case 'delete':
+                    $db->delete_keywords($_REQUEST['keywords']);                
+                    break;
+
+                case 'write':
+                    $current_keywords = get_option('genwp_selected_keywords', []);
+
+                    $merged_keywords = array_unique(array_merge($current_keywords, $_REQUEST['keywords']));
+
+                    update_option('genwp_selected_keywords', $merged_keywords);
+
+                    break;              
+                default:
+                    break;
+            }
         }
     }
 }

@@ -3,3 +3,19 @@
     width: 100%; 
     overflow: visible;
 }
+
+/* Article Generator */
+.genwp-section {
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.genwp-section-keywords {
+    background-color: #f0f8ff;
+}
+
+.genwp-section-upload {
+    background-color: #f5f5f5;
+}

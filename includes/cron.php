@@ -7,7 +7,7 @@ class genwp_Cron {
         add_filter('cron_schedules', array(__CLASS__, 'genwp_add_cron_interval'));
 
         if (!wp_next_scheduled('genwp_cron')) {
-            wp_schedule_event(time(), 'every_five_minutes', 'genwp_cron');
+            wp_schedule_event(time(), 'five_times_a_day', 'genwp_cron');
         }
         add_action('genwp_cron', [$this, 'cron_callback']);
     }
@@ -33,7 +33,9 @@ class genwp_Cron {
         // Instantiate the OpenAIGenerator, genWP_Db, and genwp_Writer classes
         $ai_generator = new OpenAIGenerator();
         $genwpdb = new genWP_Db();
-        $writer = new genwp_Writer($ai_generator, $genwpdb);
+        $openverse_generator = new OpenverseImageGenerator('images');
+		$featured_image = new FeaturedImage($openverse_generator);
+        $writer = new genwp_Writer($ai_generator, $genwpdb, $featured_image, $openverse_generator);
         
         // Get the selected keywords from the WordPress options
         $keywords = get_option('genwp_selected_keywords', []);
@@ -53,9 +55,9 @@ class genwp_Cron {
 
     // Add custom cron schedule
     public static function genwp_add_cron_interval($schedules) {
-        $schedules['every_five_minutes'] = array(
-            'interval' => 5*60,
-            'display' => __('Every 5 minutes')
+        $schedules['five_times_a_day'] = array(
+            'interval' => 5 * 60, // Interval to run 5 times a day
+            'display' => __('Five times a day')
         );
     
         return $schedules;

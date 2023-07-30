@@ -102,23 +102,25 @@ class OpenAIGenerator {
     }
    
     public function generate_completion($prompt, $args = array()) {
-        if ($this->model == 'gpt-4' || $this->model == 'gpt-3.5-turbo-16k') {
-            // Chat Model
-            $messages = array(
-                array(
-                    "role" => "system", 
-                    "content" => "You are a helpful assistant"
-                ),
-                array("role" => "user", "content" => $prompt)
-            );
-            $body = array('messages' => $messages);
-            return $this->generate('chat', $body, $args);
-            
-        } else {
-            // Traditional model: use prompt
-            return $this->generate('completion', array('prompt' => $prompt), $args);
-        }
-    }
+		$system_message = "The assistant is an experienced writer who produces detailed and informative (2000+ words) articles about the topic. The assistant uses a human-like writing style that is always formal and professional, utilizing active voice, personification and varied sentence structures to create an engaging flow and pace. The assistant must organize the content using Markdown formatting, specifically the CommonMark syntax.";
+
+		if ($this->model == 'gpt-4' || $this->model == 'gpt-3.5-turbo-16k') {
+			// Chat Model
+			$messages = array(
+				array(
+					"role" => "system", 
+					"content" => $system_message
+				),
+				array("role" => "user", "content" => $prompt)
+			);
+			$body = array('messages' => $messages);
+			return $this->generate('chat', $body, $args);
+
+		} else {
+			// Traditional model: use prompt
+			return $this->generate('completion', array('prompt' => $prompt), $args);
+		}
+	}
     
     public function generate_keywords($item, $num_keywords = 10, $args = array()) {
         $prompt = "Generate long-tail keywords for {$item}:";

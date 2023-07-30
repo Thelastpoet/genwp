@@ -27,7 +27,7 @@ class genwp_Settings {
 
         add_action('admin_init', array($this, 'article_gen'));
         add_action('wp_ajax_genwp_update_keyword', array($this, 'ajax_update_keyword'));
-
+        add_action('wp_ajax_genwp_save_map', array($this, 'ajax_save_map'));
 
         $this->genWpdb = new genWP_Db();
     }
@@ -55,6 +55,19 @@ class genwp_Settings {
 
         foreach ($fields as $field => $label) {
             add_settings_field($field, $label, array($this, 'display_field_callback'), 'genwp-openai-settings', 'openai_settings', array('field' => $field));
+        }
+
+        // adding new settings for Pexels
+        register_setting('genwp-pexels-settings', $this->option_name);
+
+        add_settings_section('pexels_settings', 'Pexels Settings', null, 'genwp-pexels-settings');
+
+        $pexels_fields = array(
+            'genwp-pexels-api-key' => 'Pexels API Key'
+        );
+
+        foreach ($pexels_fields as $field => $label) {
+            add_settings_field($field, $label, array($this, 'display_field_callback'), 'genwp-pexels-settings', 'pexels_settings', array('field' => $field));
         }
     }
 
@@ -90,6 +103,10 @@ class genwp_Settings {
                 <?php 
                 settings_fields('genwp-openai-settings');
                 do_settings_sections('genwp-openai-settings');
+
+                // adding Pexels settings fields and sections
+                settings_fields('genwp-pexels-settings');
+                do_settings_sections('genwp-pexels-settings');
                 submit_button('Save Settings'); 
                 ?>
             </form>
@@ -137,6 +154,7 @@ class genwp_Settings {
         wp_localize_script('genwp-keygen', 'genwp_ajax_object', array(
             'ajaxurl' => admin_url('admin-ajax.php'),
             'updateKeywordNonce' => wp_create_nonce('genwp_update_keyword'),
+            'saveMapNonce' => wp_create_nonce('genwp_save_map'),
         ));
     }    
 
@@ -144,6 +162,7 @@ class genwp_Settings {
      * AJAX action handler for updating a keyword.
      */
     public function ajax_update_keyword() {
+        error_log('AJAX update keyword callback called.');
         // Check the nonce for security.
         check_ajax_referer('genwp_update_keyword', 'nonce');
     
@@ -176,4 +195,26 @@ class genwp_Settings {
         wp_die();
     }
 
+    public function ajax_save_map() {
+        check_ajax_referer('genwp_save_map', 'nonce');
+    
+        // Get the data from the request.
+        $keyword = isset($_POST['keyword']) ? sanitize_text_field($_POST['keyword']) : '';
+        $user_id = isset($_POST['user_id']) ? sanitize_text_field($_POST['user_id']) : '';
+        $term_id = isset($_POST['term_id']) ? sanitize_text_field($_POST['term_id']) : '';
+    
+        // Save the map in the database.
+        $result = $this->genWpdb->update_keyword_mapping($keyword, $user_id, $term_id);
+    
+        if ($result === false) {
+            // The save failed due to a database error.
+            wp_send_json_error(array('message' => 'Could not save the map due to a database error.'));
+        } else {
+            // The save was successful.
+            wp_send_json_success(array('message' => 'Keyword Mapping Updated Successfully'));
+        }
+    
+        wp_die();
+    }
+    
 }
