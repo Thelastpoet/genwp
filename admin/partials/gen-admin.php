@@ -36,36 +36,41 @@ class genwp_KeyPage {
         if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if (isset($_POST["submit"]) && isset($_POST["gen_keywords"])) {
                 // Generate keywords
-                $this->genWpWriter->genwp_keywords($_POST);
-        
-                // Redirect to the "Keywords Found" page
-                wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
-                exit;
+                $this->handle_keyword_generation($_POST);
             } elseif (isset($_POST["upload"]) && isset($_FILES["genwp_keyword_file"])) {
                 // Handle the file upload
-                $file_array = $_FILES["genwp_keyword_file"];
-                        
-                try {
-                    $uploadResult = $this->keywordUploader->upload_keywords($file_array);
-    
-                    if (is_wp_error($uploadResult)) {
-                        // Store the error message in a transient
-                        set_transient('genwp_upload_error', $uploadResult->get_error_message(), 45);
-                    } else {
-                        // Redirect to the "Keywords Found" page after successful upload
-                        wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
-                        exit;  
-                    }
-                } catch (\Exception $e) {
-                    // Store the error message in a transient
-                    set_transient('genwp_upload_error', $e->getMessage(), 45);                    
-    
-                    // Debug: Log the error
-                    error_log( "Error uploading keywords: " . $e->getMessage() );
-                }
+                $this->handle_file_upload($_FILES["genwp_keyword_file"]);
             }
         }
-    }          
+    } 
+
+    private function handle_keyword_generation($postData) {
+        $this->genWpWriter->genwp_keywords($postData);
+        // Redirect to the "Keywords Found" page
+        wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
+        exit;
+    }
+
+    private function handle_file_upload($file_array) {
+        try {
+            $uploadResult = $this->keywordUploader->upload_keywords($file_array);
+
+            if (is_wp_error($uploadResult)) {
+                // Store the error message in a transient
+                set_transient('genwp_upload_error', $uploadResult->get_error_message(), 45);
+            } else {
+                // Redirect to the "Keywords Found" page after successful upload
+                wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
+                exit;  
+            }
+        } catch (\Exception $e) {
+            // Store the error message in a transient
+            set_transient('genwp_upload_error', $e->getMessage(), 45);                
+    
+            // Debug: Log the error
+            error_log( "Error uploading keywords: " . $e->getMessage() );
+        }
+    }
 
     public function render() {
         // Display settings form.
@@ -129,6 +134,7 @@ class genwp_KeyPage {
             echo '</div>';
             delete_transient('genwp_upload_error');
         }
+        
         ?>
         <div class="wrap genwp-wrap">
             <h1 class="genwp-main-title">Generate Keywords</h1>
