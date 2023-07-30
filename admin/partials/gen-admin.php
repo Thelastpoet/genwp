@@ -37,35 +37,35 @@ class genwp_KeyPage {
             if (isset($_POST["submit"]) && isset($_POST["gen_keywords"])) {
                 // Generate keywords
                 $this->genWpWriter->genwp_keywords($_POST);
-    
+        
                 // Redirect to the "Keywords Found" page
                 wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
                 exit;
             } elseif (isset($_POST["upload"]) && isset($_FILES["genwp_keyword_file"])) {
                 // Handle the file upload
-                $tmpFilePath = $_FILES["genwp_keyword_file"]["tmp_name"];
-                    
+                $file_array = $_FILES["genwp_keyword_file"];
+                        
                 try {
-                    $this->keywordUploader->upload_keywords($tmpFilePath);
+                    $uploadResult = $this->keywordUploader->upload_keywords($file_array);
     
-                    // Redirect to the "Keywords Found" page after successful upload
-                    wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
+                    if (is_wp_error($uploadResult)) {
+                        // Store the error message in a transient
+                        set_transient('genwp_upload_error', $uploadResult->get_error_message(), 45);
+                    } else {
+                        // Redirect to the "Keywords Found" page after successful upload
+                        wp_redirect(admin_url('admin.php?page=genwp-found-keywords'));
+                        exit;  
+                    }
                 } catch (\Exception $e) {
-                    // Show an admin notice in WordPress
-                    add_action('admin_notices', function() use ($e) {
-                        echo '<div class="notice notice-error">';
-                        echo '<p>Error uploading keywords: ' . $e->getMessage() . '</p>';
-                        echo '</div>';
-                    });
-
+                    // Store the error message in a transient
+                    set_transient('genwp_upload_error', $e->getMessage(), 45);                    
+    
                     // Debug: Log the error
                     error_log( "Error uploading keywords: " . $e->getMessage() );
                 }
-    
-                exit;
             }
         }
-    }    
+    }          
 
     public function render() {
         // Display settings form.
@@ -120,6 +120,15 @@ class genwp_KeyPage {
     }    
 
     public function displayForm() {
+        // Check for an upload error
+        $error_message = get_transient('genwp_upload_error');
+        if ($error_message) {
+            // Display the error and delete the transient
+            echo '<div class="notice notice-error">';
+            echo '<p>Error uploading keywords: ' . esc_html($error_message) . '</p>';
+            echo '</div>';
+            delete_transient('genwp_upload_error');
+        }
         ?>
         <div class="wrap genwp-wrap">
             <h1 class="genwp-main-title">Generate Keywords</h1>
