@@ -2,12 +2,7 @@
 
 namespace genwp;
 
-use genwp\OpenAIGenerator;
-use genwp\genWP_Db;
-use genwp\genwp_Writer;
-use genwp\FeaturedImage;
-use genwp\OpenverseImageGenerator;
-use genwp\KeywordsUploader;
+use \Exception;
 
 class genwp_KeyPage {
 
@@ -16,17 +11,25 @@ class genwp_KeyPage {
     private $genWpdb;
     private $featured_image;
     private $openverse_generator;
-
+    private $keywordUploader;
+    
     public function __construct() {
+        $this->initializeClasses();
+        $this->addActions();
+    }
+
+    private function initializeClasses() {
         $this->openAI = new OpenAIGenerator();
         $this->genWpdb = new genWP_Db();        
         $this->openverse_generator = new OpenverseImageGenerator('images');
         $this->featured_image = new FeaturedImage($this->openverse_generator);
         $this->keywordUploader = new KeywordsUploader($this->genWpdb);
         $this->genWpWriter = new genwp_Writer($this->openAI, $this->genWpdb, $this->featured_image, $this->openverse_generator);
+    }
 
-        add_action( 'wp_ajax_get_terms', array($this, 'genwp_get_terms') );
-        add_action( 'init', array($this, 'handle_form_submission'));
+    private function addActions() {
+        add_action('wp_ajax_get_terms', array($this, 'genwp_get_terms'));
+        add_action('init', array($this, 'handle_form_submission'));
     }
 
     public function handle_form_submission() {

@@ -131,7 +131,7 @@ class genwp_Settings {
         $keywords = $this->genWpdb->get_keywords();
         
         // Create and display the keyword list table
-        $keywordListTable = new Gen_Key_Table($keywords);
+        $keywordListTable = new Gen_Key_Table($keywords, $this->genWpdb);
         $keywordListTable->prepare_items();
         
         // Start form here to include keyword list table in form

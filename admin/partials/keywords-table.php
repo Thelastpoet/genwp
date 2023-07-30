@@ -8,18 +8,22 @@ if (!class_exists('WP_List_Table')) {
 
 class Gen_Key_Table extends \WP_List_Table {
     private $keywords = array();
+    private $db;
+    private $users;
+    private $categories;
 
-    public function __construct($keywords) {
+    public function __construct($keywords, \genwp\genWP_Db $db) {
         parent::__construct(array(
             'singular' => 'keyword',
             'plural' => 'keywords',
             'ajax' => false
         ));
 
-        $db = new \genwp\genWP_Db(); 
-        $this->process_bulk_action($db);
-
+        $this->db = $db;
+        $this->process_bulk_action();
         $this->keywords = $keywords;
+        $this->users = get_users();
+        $this->categories = get_terms(array('taxonomy' => 'category', 'hide_empty' => false));
     }
 
     // Helper function to generate a dropdown - -We will move this to functions file
@@ -32,9 +36,7 @@ class Gen_Key_Table extends \WP_List_Table {
         return sprintf('<select name="%s[%s]" class="%s">%s</select>', $class, sanitize_text_field($keyword), $class, $options);
     }    
 
-    public function prepare_items() {
-        $db = new \genwp\genWP_Db();
-    
+    public function prepare_items() {    
         $columns = $this->get_columns();
         $this->_column_headers = array($columns, array(), array());
         
@@ -73,31 +75,22 @@ class Gen_Key_Table extends \WP_List_Table {
     }    
     
     public function column_default($item, $column_name) {
+        $sanitized_keyword = sanitize_text_field($item['keyword']);
         switch ($column_name) {
             case 'keyword':
-            // Form input
-            return sprintf('<input type="text" class="keyword-input long-text" data-keyword="%s" value="%s" readonly />', sanitize_text_field($item['keyword']), sanitize_text_field($item['keyword']));
+                return sprintf('<input type="text" class="keyword-input long-text" data-keyword="%s" value="%s" readonly />', $sanitized_keyword, $sanitized_keyword);
                 
             case 'user':
-                // Dropdown with users
-                $users = get_users();
-                return $this->generate_dropdown($users, $item['user_id'], 'user_select', 'ID', 'display_name', $item['keyword']);
+                return $this->generate_dropdown($this->users, $item['user_id'], 'user_select', 'ID', 'display_name', $sanitized_keyword);
 
             case 'category':
-                // Dropdown with categories
-                $args = array(
-                    'taxonomy' => 'category',
-                    'hide_empty' => false,
-                );
-                $categories = get_terms($args);
-                return $this->generate_dropdown($categories, $item['term_id'], 'category-select', 'term_id', 'name', $item['keyword']);
+                return $this->generate_dropdown($this->categories, $item['term_id'], 'category-select', 'term_id', 'name', $sanitized_keyword);
             
             case 'actions':
-                // Display a "Quick Edit" and "Save" button
-                return sprintf('<a href="#" class="quick-edit-button" data-keyword="%s">Quick Edit</a> <a style="display:none;" href="#" class="quick-save-button" data-keyword="%s">Save</a>', $item['keyword'], $item['keyword']);         
+                return sprintf('<a href="#" class="quick-edit-button" data-keyword="%s">Quick Edit</a> <a style="display:none;" href="#" class="quick-save-button" data-keyword="%s">Save</a>', $sanitized_keyword, $sanitized_keyword);         
             
             case 'mapping':
-                return sprintf('<input type="submit" name="save_map[%s]" class="button action" value="Save Map"/>', $item['keyword']);
+                return sprintf('<input type="submit" name="save_map[%s]" class="button action" value="Save Map"/>', $sanitized_keyword);
             
             default:
                 return print_r($item, true);
@@ -112,29 +105,26 @@ class Gen_Key_Table extends \WP_List_Table {
         return $actions;
     }
 
-    private function process_bulk_action($db) {
+    private function process_bulk_action() {
         // if action is 'save_map'
         if (isset($_POST['save_map'])) {
-
-            // Get the keyword
-            $keyword = key($_POST['save_map']);
-
-            // Get new user_id and term_id
-            $user_id = $_POST['user_select'][$keyword];
-            $term_id = $_POST['category-select'][$keyword];
+            $keyword = sanitize_text_field(key($_POST['save_map']));
+            $user_id = sanitize_text_field($_POST['user_select'][$keyword]);
+            $term_id = sanitize_text_field($_POST['category-select'][$keyword]);
 
             // Update the association in db
-            $db->update_keyword_mapping($keyword, $user_id, $term_id);
+            $this->db->update_keyword_mapping($keyword, $user_id, $term_id);
 
             // Refresh the $this->keywords variable
-            $this->keywords = $db->get_keywords();        
+            $this->keywords = $this->db->get_keywords();        
         } else {
 
             $action = $this->current_action();
 
             switch ($action) {
                 case 'delete':
-                    $db->delete_keywords($_REQUEST['keywords']);                
+                    $keywords_to_delete = array_map('sanitize_text_field', $_REQUEST['keywords']);
+                    $this->db->delete_keywords($keywords_to_delete);              
                     break;
 
                 case 'write':
