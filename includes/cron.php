@@ -33,9 +33,9 @@ class genwp_Cron {
         // Instantiate the OpenAIGenerator, genWP_Db, and genwp_Writer classes
         $ai_generator = new OpenAIGenerator();
         $genwpdb = new genWP_Db();
-        $openverse_generator = new OpenverseImageGenerator('images');
-		$featured_image = new FeaturedImage($openverse_generator);
-        $writer = new genwp_Writer($ai_generator, $genwpdb, $featured_image, $openverse_generator);
+        $pixabay_generator = new PixabayImageGenerator();
+		$featured_image = new FeaturedImage($pixabay_generator);
+        $writer = new genwp_Writer($ai_generator, $genwpdb, $featured_image, $pixabay_generator);
         
         // Get the selected keywords from the WordPress options
         $keywords = get_option('genwp_selected_keywords', []);

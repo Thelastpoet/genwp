@@ -64,6 +64,19 @@ class genWP_Db {
     }
 
     /**
+     * Retrieve a keyword from the database.
+     *
+     * @param string $keyword The keyword to be retrieved.
+     * @return string|false The keyword if it exists, false otherwise.
+     */
+    public function get_keyword($keyword) {
+        global $wpdb;
+
+        $query = $wpdb->prepare("SELECT keyword FROM $this->table_name WHERE keyword = %s LIMIT 1;", sanitize_text_field($keyword));
+        return $wpdb->get_var($query);
+    }
+
+    /**
      * Save keywords and title to the database.
      *
      * @param array  $keywords An array of keywords.
@@ -71,27 +84,33 @@ class genWP_Db {
      */
     public function saveKeywords( $keywords, $title = "", $taxonomy_term = "", $user_id = NULL, $term_id = NULL ) {
         global $wpdb;
-    
+
         foreach ( $keywords as $keyword ) {
-            $data = array(
-                'keyword' => $keyword,
-                'title'   => $title,
-                'taxonomy_term' => $taxonomy_term,
-            );
-            $data_format = array('%s', '%s', '%s');
-    
-            if ($user_id !== NULL) {
-                $data['user_id'] = $user_id;
-                $data_format[] = '%d';
-            }
-            if ($term_id !== NULL) {
-                $data['term_id'] = $term_id;
-                $data_format[] = '%d';
-            }
+            // Check if the keyword already exists in the database
+            $existingKeyword = $this->get_keyword($keyword);
             
-            $wpdb->insert($this->table_name, $data, $data_format);
+            // If the keyword doesn't exist, add it to the database
+            if (!$existingKeyword) {
+                $data = array(
+                    'keyword' => $keyword,
+                    'title'   => $title,
+                    'taxonomy_term' => $taxonomy_term,
+                );
+                $data_format = array('%s', '%s', '%s');
+
+                if ($user_id !== NULL) {
+                    $data['user_id'] = $user_id;
+                    $data_format[] = '%d';
+                }
+                if ($term_id !== NULL) {
+                    $data['term_id'] = $term_id;
+                    $data_format[] = '%d';
+                }
+                
+                $wpdb->insert($this->table_name, $data, $data_format);
+            }
         }
-    }    
+    }
 
     /**
      * Retrieve all keywords, taxonomy_terms, and titles from the database.

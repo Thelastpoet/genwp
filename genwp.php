@@ -48,7 +48,7 @@ class GenWP {
         require_once GENWP_PLUGIN_DIR . 'admin/partials/gen-admin.php';
         require_once GENWP_PLUGIN_DIR . 'admin/partials/keywords-table.php';
         require_once GENWP_PLUGIN_DIR . 'includes/class-images.php';
-        require_once GENWP_PLUGIN_DIR . 'includes/class-openverse_images.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/class-pixabay-images.php';
         require_once GENWP_PLUGIN_DIR . 'includes/keywords-uploader.php';
 
         require_once GENWP_PLUGIN_DIR . 'vendor/autoload.php';

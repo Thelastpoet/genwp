@@ -121,22 +121,6 @@ class OpenAIGenerator {
 			return $this->generate('completion', array('prompt' => $prompt), $args);
 		}
 	}
-    
-    public function generate_keywords($item, $num_keywords = 10, $args = array()) {
-        $prompt = "Generate long-tail keywords for {$item}:";
-        $completion = $this->generate_completion($prompt, $args);
-            
-        // Parse out the keywords from the completion
-        $keywords = array_map(function($line) {
-            // Remove digits and dots at the start of the line
-            $line = preg_replace('/^\d+\.\s+/', '', $line);
-            // Remove quotes around the keywords
-            $line = trim($line, '"');
-            return $line;
-        }, explode("\n", $completion));
-        
-        return $keywords;
-    }
 
     public function generate_image($description, $n = 1, $size = '256x256', $args = array()) {
         $body = array(

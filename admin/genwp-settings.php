@@ -21,7 +21,6 @@ class genwp_Settings {
     public function __construct() {
         add_action('admin_menu', array($this, 'add_options_page'));
         add_action('admin_init', array($this, 'register_settings'));
-        add_action('admin_init', [new genwp_KeyPage(), 'registerSettings']);
 
         add_action('admin_enqueue_scripts', array($this, 'enqueue_genwp_scripts'));
 
@@ -115,11 +114,11 @@ class genwp_Settings {
     } 
 
     public function article_gen() {
-        if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["generate_keywords"])) {
+        if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["upload"])) {
             $adminPage = new genwp_KeyPage();
             $adminPage->handleFormSubmission();
         }
-    }
+    }    
 
     public function display_article_gen() {
         $adminPage = new genwp_KeyPage();
