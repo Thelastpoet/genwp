@@ -176,7 +176,7 @@ class genwp_Settings {
             // The update failed due to a database error.
             wp_send_json_error(array('message' => 'Could not update the keyword due to a database error.'));
         } else if ($result === 0) {
-            // No rows were updated. This happens when the old keyword doesn't exist in the database.
+            // No rows were updated
             wp_send_json_error(array('message' => 'The specified keyword does not exist.'));
         } else {
             // Update keyword in genwp_selected_keywords option
@@ -189,8 +189,7 @@ class genwp_Settings {
             // The update was successful. Return the new keyword.
             wp_send_json_success(array('new_keyword' => $new_keyword));
         }
-    
-        // Always die in functions echoing AJAX content.
+
         wp_die();
     }
 
@@ -206,10 +205,10 @@ class genwp_Settings {
         $result = $this->genWpdb->update_keyword_mapping($keyword, $user_id, $term_id);
     
         if ($result === false) {
-            // The save failed due to a database error.
+            // Mapping failed due to a database error.
             wp_send_json_error(array('message' => 'Could not save the map due to a database error.'));
         } else {
-            // The save was successful.
+            // Mapping was successful.
             wp_send_json_success(array('message' => 'Keyword Mapping Updated Successfully'));
         }
     
