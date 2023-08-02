@@ -9,15 +9,15 @@ if (!defined('ABSPATH')) {
 use \WP_Error;
 
 class FeaturedImage {
-    private $pixabay_generator;
+    private $image_generator;
 
-    public function __construct(PixabayImageGenerator $pixabay_generator) {
-        $this->pixabay_generator = $pixabay_generator;
+    public function __construct(ImageGenerator $image_generator) {
+        $this->image_generator = $image_generator;
     }
 
     public function set_featured_image($keyword, $post_id) {
-        // Generate image with Unsplash
-        $image_data = $this->pixabay_generator->generate_image($keyword);
+        // Generate image
+        $image_data = $this->image_generator->pexels_generate_image($keyword);
 
         if (is_wp_error($image_data)) {
             return new WP_Error('no_image_data', 'No image data was generated');
