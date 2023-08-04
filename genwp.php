@@ -41,6 +41,7 @@ class GenWP {
      */
     private function includes() {
         require_once GENWP_PLUGIN_DIR . 'includes/class-openai.php';
+        require_once GENWP_PLUGIN_DIR . 'admin/partials/article-settings.php';
         require_once GENWP_PLUGIN_DIR . 'admin/genwp-settings.php';
         require_once GENWP_PLUGIN_DIR . 'includes/class-writer.php';
         require_once GENWP_PLUGIN_DIR . 'includes/class-db.php';

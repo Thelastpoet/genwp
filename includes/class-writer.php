@@ -105,8 +105,15 @@ class genwp_Writer {
     } 
 
     private function create_post($content, $title, $keyword_data, $keyword) {    
-        $author_id = 1;
-        $term_id = null; // Add a default term ID
+        // Retrieve the settings
+        $settings = get_option('genwp_article_settings', array());
+
+        $defult_author = isset($settings['genwp_default_author']) ? $settings['genwp_default_author'] : 1;
+        $default_post_type = isset($settings['genwp_default_post_type']) ? $settings['genwp_default_post_type'] : 'post';
+        $default_post_status = isset($settings['genwp_default_post_status']) ? $settings['genwp_default_post_status'] : 'publish';
+
+        $author_id = $defult_author;
+        $term_id = null; 
     
         if ($keyword_data) {
             $author_id = $keyword_data['user_id'];
@@ -124,8 +131,8 @@ class genwp_Writer {
         $postarr = array(
             'post_title'    => wp_strip_all_tags($title),
             'post_content'  => $content,
-            'post_status'   => 'publish',
-            'post_type'     => 'post',
+            'post_status'   => $default_post_status,
+            'post_type'     => $default_post_type,
             'post_author'   => $author_id,
             'post_name'     => $slug,
         );

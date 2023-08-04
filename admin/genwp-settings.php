@@ -11,11 +11,12 @@ if (!defined('ABSPATH')) {
 class genwp_Settings {
     private $option_name = 'genwp_settings';
     private $page_title = 'OpenAI Settings';
-    private $menu_title = 'GenWP';
+    private $menu_title = 'GenWP Writer';
     private $capability = 'manage_options';
     private $menu_slug = 'genwp-settings';
     private $icon_url = 'dashicons-welcome-write-blog';
 
+    private $articleSettings;
     private $genWpdb;
 
     public function __construct() {
@@ -28,6 +29,7 @@ class genwp_Settings {
         add_action('wp_ajax_genwp_update_keyword', array($this, 'ajax_update_keyword'));
         add_action('wp_ajax_genwp_save_map', array($this, 'ajax_save_map'));
 
+        $this->articleSettings = new genWP_ArticleSettings();
         $this->genWpdb = new genWP_Db();
     }
     
