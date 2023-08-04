@@ -9,8 +9,6 @@ class genwp_Cron {
         $this->schedule_event();
 
         add_action('genwp_cron', [$this, 'cron_callback']);
-
-        // Add action to update cron schedule when settings are updated
         add_action('genwp_settings_updated', array($this, 'on_update_settings'), 10, 2);
     }
 
@@ -68,9 +66,6 @@ class genwp_Cron {
             'interval' => $nearest_minute_interval, 
             'display' => sprintf(__('%d times daily'), $frequency)
         );
-
-        // Clear cron schedules cache so that the updated schedule is used
-        wp_cache_delete('cron_schedules', 'cron');
     
         return $schedules;
     }
@@ -78,6 +73,7 @@ class genwp_Cron {
     public function on_update_settings($old_value, $new_value) {
         // If the frequency setting has changed, reschedule the event
         if (isset($old_value['genwp_cron_frequency']) && isset($new_value['genwp_cron_frequency']) && $old_value['genwp_cron_frequency'] !== $new_value['genwp_cron_frequency']) {
+            wp_clear_scheduled_hook('genwp_cron');
             $this->schedule_event();
         }
     }

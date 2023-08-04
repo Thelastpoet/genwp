@@ -73,7 +73,7 @@ class genwp_ArticleSettings {
                     'show_option_none' => 'Select user',
                     'name' => $this->option_name.'['.esc_attr($field).']',
                     'selected' => $value,
-                    'who' => 'authors'
+                    'role__in' => array('Administrator', 'Editor', 'Author')
                 );
                 wp_dropdown_users($args);
                 break;                
@@ -89,6 +89,11 @@ class genwp_ArticleSettings {
             case 'number':
             case 'text':
                 echo '<input type="'.esc_attr($type).'" id="'.esc_attr($field).'" name="'.$this->option_name.'['.esc_attr($field).']" value="'.esc_attr($value).'">';
+                
+                if($field === 'genwp_cron_frequency') {
+                    echo '<p class="description">' . __('Enter a value from 1 to 24. This is the number of times the articles will be generated per day.') . '</p>';
+                }
+    
                 break;
     
             default:
@@ -138,7 +143,7 @@ class genwp_ArticleSettings {
             switch ($field) {
                 case 'genwp_default_author':
                 case 'genwp_cron_frequency':
-                    $sanitized_input[$field] = absint($value);
+                    $sanitized_input[$field] = min(absint($value), 24);
                     break;
 
                 case 'genwp_default_post_type':
