@@ -13,6 +13,7 @@ class genwp_Cron {
             wp_schedule_event(time(), $cron_interval, 'genwp_cron');
         }
         add_action('genwp_cron', [$this, 'cron_callback']);
+        add_action('update_option_genwp_article_settings', array($this, 'reschedule_event'));
     }
 
     public function cron_callback() {
@@ -68,4 +69,19 @@ class genwp_Cron {
 
         return $schedules;
     }
+
+    public function reschedule_event() {
+        $article_settings = get_option('genwp_article_settings', array());
+        $cron_frequency = isset($article_settings['genwp_cron_frequency']) ? (int) $article_settings['genwp_cron_frequency'] : 5;
+        $cron_interval = 'genwp_cron_' . $cron_frequency . '_times_a_day';
+
+        // Unschedule the existing event
+        wp_clear_scheduled_hook('genwp_cron');
+
+        // Schedule the new event with the updated frequency
+        if (!wp_next_scheduled('genwp_cron')) {
+            wp_schedule_event(time(), $cron_interval, 'genwp_cron');
+        }
+    }
+
 }
