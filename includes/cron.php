@@ -58,16 +58,12 @@ class genwp_Cron {
 
     // Add custom cron schedule
     public static function genwp_add_cron_interval($schedules) {
-        $settings = get_option('genwp_article_settings', array());
+        $article_settings = get_option('genwp_article_settings', array());
+        $cron_frequency = isset($article_settings['genwp_cron_frequency']) ? (int) $article_settings['genwp_cron_frequency'] : 5;
 
-        $frequency = isset($settings['genwp_cron_frequency']) ? $settings['genwp_cron_frequency'] : 5;
-    
-        $interval = round(24 * 60 * 60 / $frequency);
-        $nearest_minute_interval = $interval - ($interval % 60); 
-    
-        $schedules['genwp_frequency'] = array(
-            'interval' => $nearest_minute_interval, 
-            'display' => sprintf(__('%d times daily'), $frequency)
+        $schedules['genwp_cron_' . $cron_frequency . '_times_a_day'] = array(
+            'interval' => 86400 / $cron_frequency,
+            'display' => sprintf(__('%d times a day', 'genwp'), $cron_frequency)
         );
 
         return $schedules;
