@@ -1,8 +1,8 @@
 <?php
 
-namespace genwp;
+namespace GenWP;
 
-use genwp\genWP_Db;
+use GenWP\genWP_Db;
 
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly

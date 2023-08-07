@@ -5,7 +5,7 @@
  * @package genwp
  */
 
-namespace genwp;
+namespace GenWP;
 
 if ( !defined( 'ABSPATH' )) {
     exit; // Exit if accessed directly.

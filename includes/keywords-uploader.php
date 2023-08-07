@@ -1,12 +1,12 @@
 <?php
 
-namespace genwp;
+namespace GenWP;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
-use genwp\genWP_Db;
+use GenWP\genWP_Db;
 
 require_once(ABSPATH . 'wp-admin/includes/file.php');
 

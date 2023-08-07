@@ -31,9 +31,6 @@ class GenWP {
         $this->includes();
 
         new genwp_Settings();
-        new genwp_Cron();
-
-        register_activation_hook(__FILE__, array($this, 'activate_plugin'));
     }
 
     /**
@@ -52,22 +49,20 @@ class GenWP {
         require_once GENWP_PLUGIN_DIR . 'includes/class-featured-image.php';
         require_once GENWP_PLUGIN_DIR . 'includes/keywords-uploader.php';
 
-        require_once GENWP_PLUGIN_DIR . 'vendor/autoload.php';
-    }
+        require_once GENWP_PLUGIN_DIR . 'includes/genwp-activator.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/genwp-deactivator.php';
 
-    /**
-     * Activate the plugin.
-     */
-    public function activate_plugin() {
-        $db = new genWP_Db();
-        $db->create_table();
+        require_once GENWP_PLUGIN_DIR . 'vendor/autoload.php';
     }
 }
 
 /**
  * Initialize the plugin.
  */
-function init_genwp() {
+function init_genwp() {    
+    register_activation_hook(__FILE__, 'GenWP\genwp_Activation::activate');
+    register_deactivation_hook(__FILE__, 'GenWP\genwp_Deactivation::deactivate');
+
     new GenWP();
 }
 

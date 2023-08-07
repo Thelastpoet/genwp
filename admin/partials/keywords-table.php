@@ -1,6 +1,6 @@
 <?php
 
-namespace genwp;
+namespace GenWP;
 
 if (!class_exists('WP_List_Table')) {
     require_once(ABSPATH . 'wp-admin/includes/class-wp-list-table.php');
@@ -12,7 +12,7 @@ class Gen_Key_Table extends \WP_List_Table {
     private $users;
     private $categories;
 
-    public function __construct($keywords, \genwp\genWP_Db $db) {
+    public function __construct($keywords, \GenWP\genWP_Db $db) {
         parent::__construct(array(
             'singular' => 'keyword',
             'plural' => 'keywords',

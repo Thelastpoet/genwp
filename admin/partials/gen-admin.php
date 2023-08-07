@@ -1,6 +1,6 @@
 <?php
 
-namespace genwp;
+namespace GenWP;
 
 use \Exception;
 
