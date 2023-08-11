@@ -1,0 +1,20 @@
+{
+    "name": "emcie/genwp",
+    "description": "GenWP creates full WordPress posts with OpenAI Models",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "Emcie\\Genwp\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "thelastpoet",
+            "email": "emcie4@gmail.com"
+        }
+    ],
+    "require": {
+        "league/commonmark": "^2.4"
+    }
+}
