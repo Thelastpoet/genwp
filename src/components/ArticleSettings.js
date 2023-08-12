@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+
+import API from '../services/api';
 
 const ArticleSettings = (props) => {
     const defaultSettings = {
@@ -17,8 +18,7 @@ const ArticleSettings = (props) => {
     // Fetch the current settings from WP
     const fetchSettings = async () => {
         try {
-            const url = `${genwpLocal.apiURL}/genwp/v1/article-settings`;
-            const response = await axios.get(url);
+            const response = await API.fetchArticleSettings();
             setSettings({ ...defaultSettings, ...response.data });
 
         } catch (error) {
@@ -29,7 +29,7 @@ const ArticleSettings = (props) => {
     // Fetch the current settings from WP
     const fetchAuthors = async () => {
         try {
-          const response = await axios.get(`${genwpLocal.apiURL}/genwp/v1/authors`);
+          const response = await API.fetchAuthors();
           setAuthors(response.data);
         } catch (error) {
           console.error('Error fetching authors:', error);
@@ -38,7 +38,7 @@ const ArticleSettings = (props) => {
 
     const fetchPostTypes = async () => {
         try {
-          const response = await axios.get(`${genwpLocal.apiURL}/genwp/v1/types`);
+          const response = await API.fetchPostTypes();
           setPostTypes(response.data);
         } catch (error) {
           console.error('Error fetching post types:', error);
@@ -47,7 +47,7 @@ const ArticleSettings = (props) => {
 
     const fetchPostStatuses = async () => {
         try {
-          const response = await axios.get(`${genwpLocal.apiURL}/genwp/v1/statuses`);
+          const response = await API.fetchPostStatuses();
           setPostStatuses(response.data);
         } catch (error) {
           console.error('Error fetching post statuses:', error);
@@ -74,15 +74,7 @@ const ArticleSettings = (props) => {
         setStatus('saving');
 
         try {
-            const url = `${genwpLocal.apiURL}/genwp/v1/article-settings`;
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': genwpLocal.nonce
-                }
-            };
-
-            await axios.post(url, settings, config);
+            await API.saveArticleSettings(settings);
             setStatus('saved');
             fetchSettings();
         } catch (error) {
@@ -140,7 +132,7 @@ const ArticleSettings = (props) => {
 
                 case 'number':
                     return (
-                        <div key={field.name} className="flex flex-col mb-4">
+                        <div key={field.name} className="flex flex-col mb-4 pb-4">
                             <label className="font-medium mb-2">{field.label}</label>
                             <input
                                 type="number"
@@ -152,7 +144,7 @@ const ArticleSettings = (props) => {
                                 className={`${commonInputClasses} w-96`}
                             />
                             {field.name === 'genwp_cron_frequency' && (
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-xs sm:text-sm text-gray-600 mb-2">
                                     Enter a value from 1 to 24. This is the number of times the articles will be generated per day.
                                 </p>
                             )}
@@ -169,7 +161,6 @@ const ArticleSettings = (props) => {
         });
     };
 
-    // Define your fields
     const fields = [
         { name: 'genwp_default_author', label: 'Default Post Author', type: 'dropdown_users' },
         { name: 'genwp_default_post_type', label: 'Default Post Type', type: 'dropdown_post_types' },
@@ -178,7 +169,7 @@ const ArticleSettings = (props) => {
     ];
     
     return (
-        <div className="wrap p-8 bg-white rounded shadow-lg w-full">
+        <div className="wrap p-8 bg-gray-50 rounded shadow-lg w-full">
             {status === 'saved' && (
                 <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
                     <strong className="font-bold">Success!</strong>

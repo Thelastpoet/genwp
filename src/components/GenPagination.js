@@ -1,7 +1,11 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
-const Pagination = ({ currentPage, itemsPerPage, totalItems, onPageChange }) => {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
+  const validatedTotalItems = Number(totalItems) || 0;
+  const validatedItemsPerPage = Number(itemsPerPage) || 1;
+
+  const totalPages = Math.ceil(validatedTotalItems / validatedItemsPerPage);
 
   return (
     <div className="flex items-center justify-between mt-4">
@@ -13,7 +17,7 @@ const Pagination = ({ currentPage, itemsPerPage, totalItems, onPageChange }) => 
         Previous
       </button>
       <span className="mx-4 text-gray-700">
-        Page {currentPage} of {totalPages}
+        Page {currentPage}
       </span>
       <button 
         onClick={() => onPageChange(currentPage + 1)} 
@@ -24,6 +28,13 @@ const Pagination = ({ currentPage, itemsPerPage, totalItems, onPageChange }) => 
       </button>
     </div>
   );
+};
+
+Pagination.propTypes = {
+  totalItems: PropTypes.number.isRequired,
+  itemsPerPage: PropTypes.number.isRequired,
+  currentPage: PropTypes.number.isRequired,
+  onPageChange: PropTypes.func.isRequired
 };
 
 export default Pagination;

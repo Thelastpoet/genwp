@@ -35,7 +35,7 @@ class GenWP {
         $this->includes();
         new genWP_Core;
         new genWP_Settings;
-        new GenWP_Rest_Route();
+        new GenWP_Rest();
         new genwp_Cron();
     }
 
@@ -45,7 +45,7 @@ class GenWP {
     private function includes() {
         require_once GENWP_PLUGIN_DIR . 'genwp-core.php';
         require_once GENWP_PLUGIN_DIR . 'includes/admin/genwp-settings.php';
-        require_once GENWP_PLUGIN_DIR . 'includes/classes/class-genwp-routes.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/classes/class-rest.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/keywords-table.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-db.php';
         

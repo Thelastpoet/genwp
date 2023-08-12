@@ -45,7 +45,7 @@ const UploadKeywords = () => {
   };  
  
   return (
-    <div className="wrap genwp-wrap p-8 bg-white flex flex-col items-center rounded shadow-lg w-full">
+    <div className="wrap genwp-wrap p-8 bg-gray-50 flex flex-col items-center rounded shadow-lg w-full">
       <h1 className="genwp-main-title text-2xl font-bold mb-6 text-center">Upload Keywords</h1>
       {errorMessage && (
         <div className="notice notice-error bg-red-200 p-4 text-red-600 mb-4 w-full max-w-md">

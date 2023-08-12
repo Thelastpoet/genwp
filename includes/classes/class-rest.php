@@ -10,7 +10,7 @@ use GenWP\Gen_Key_Table;
 use GenWP\genWP_Db;
 use GenWP\KeywordsUploader;
 
-class GenWP_Rest_Route {
+class GenWP_Rest extends \WP_REST_Controller {
     private $gen_key_table;
     private $keywords_uploader;
     private $genwpdb;
@@ -19,10 +19,10 @@ class GenWP_Rest_Route {
         $this->gen_key_table = new Gen_Key_Table();
         $this->genwpdb = new genWP_Db();
         $this->keywords_uploader = new KeywordsUploader($this->genwpdb);
-        add_action( 'rest_api_init', [ $this, 'genwp_register_routes' ] );
+        add_action( 'rest_api_init', [ $this, 'register_routes' ] );
     }
 
-    public function genwp_register_routes() {
+    public function register_routes() {
         register_rest_route( 'genwp/v1', '/settings', [
             'methods' => 'POST',
             'callback' => [ $this, 'save_settings' ],
@@ -69,7 +69,22 @@ class GenWP_Rest_Route {
             'methods' => 'GET',
             'callback' => [$this->gen_key_table, 'get_keywords_data'],
             'permission_callback' => [$this, 'permissions_check'],
+            'args' => [
+                'page' => [
+                    'validate_callback' => function($param) {
+                        return is_numeric($param) && $param > 0;
+                    },
+                    'default' => 1,
+                ],
+                'limit' => [
+                    'validate_callback' => function($param) {
+                        return is_numeric($param) && $param > 0;
+                    },
+                    'default' => 10,
+                ]
+            ],
         ]);
+        
         
         register_rest_route('genwp/v1', '/keywords/mapping', [
             'methods' => 'POST',
@@ -106,7 +121,61 @@ class GenWP_Rest_Route {
             'methods' => 'POST',
             'callback' => [ $this->keywords_uploader, 'upload_keywords' ],
             'permission_callback' => [$this, 'permissions_check'],
-        ]);        
+        ]); 
+        
+        register_rest_route('genwp/v1', '/get-(?P<keyType>.+)-api-key', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_api_key'],
+            'permission_callback' => [$this, 'permissions_check'],
+            'args' => [
+                'key' => [
+                    'validate_callback' => function($param, $request, $key) {
+                        return is_string($param);
+                    }
+                ]
+            ]
+        ]);
+
+        register_rest_route('genwp/v1', '/(?P<keyType>.+)-api-key', [
+            'methods' => 'POST',
+            'callback' => [$this, 'save_api_key'],
+            'permission_callback' => [$this, 'permissions_check'],
+            'args' => [
+                'key' => [
+                    'required' => true,
+                    'validate_callback' => function($param, $request, $key) {
+                        return is_string($param);
+                    }
+                ]
+            ]
+        ]);
+    }
+
+    public function save_api_key(\WP_REST_Request $request) {
+        $keyType = $request->get_param('keyType');
+        $key = $request->get_param('key');
+
+        $result = update_option($keyType, $key);
+
+        if ($result) {
+            return rest_ensure_response(['success' => true, 'message' => 'API Key saved successfully!']);
+        } else {
+            return rest_ensure_response(['success' => false, 'message' => 'Failed to save the API key.']);
+        }
+        
+    }
+
+    public function get_api_key(\WP_REST_Request $request) {
+        $keyType = $request->get_param('keyType');
+
+        $api_key = get_option($keyType);
+
+        if ($api_key) {
+            return rest_ensure_response(['success' => true, 'key' => $api_key]);
+        } else {
+            return new \WP_Error('no_api_key_found', 'No API Key found for this type.', ['status' => 404]);
+        }
+        
     }
 
     public function save_settings( \WP_REST_Request $request ) {
