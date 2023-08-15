@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
 
 import API from '../services/api';
 import useErrorHandler from '../hooks/useErrorHandler';
@@ -40,13 +39,12 @@ const KeywordsTable = () => {
       const usersData = await API.getUsers();
       const categoriesData = await API.getCategories();
       
-      ReactDOM.unstable_batchedUpdates(() => {
-          setKeywords(keywordsData.data.keywords || []);
-          setUsers(usersData.data);
-          setCategories(categoriesData.data);
-          setTotalItems(keywordsData.data.total || 1000);
-          setLoading(false);
-      });
+      setKeywords(keywordsData.data.keywords || []);
+      setUsers(usersData.data);
+      setCategories(categoriesData.data);
+      setTotalItems(keywordsData.data.total || 1000);
+      setLoading(false);
+      
     } catch (error) {
       console.error('An error occurred while fetching data:', error);
     }

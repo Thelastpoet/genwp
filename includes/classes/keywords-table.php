@@ -6,21 +6,38 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 class Gen_Key_Table {
-    private $keywords = array();
     private $db;
-    private $users;
-    private $categories;
+    private $users = null; 
+    private $categories = null;
+    private $keywords = array();
+    private const DEFAULT_LIMIT = 10;
 
     public function __construct() {
         $this->db = new  genWP_Db();
         $this->keywords = $this->db->get_keywords();
-        $this->users = get_users();
-        $this->categories = get_terms(array('taxonomy' => 'category', 'hide_empty' => false));
+    }
+
+    private function refresh_keywords() {
+        $this->keywords = $this->db->get_keywords();
+    }
+
+    private function get_users() {
+        if (is_null($this->users)) {
+            $this->users = get_users();
+        }
+        return $this->users;
+    }
+
+    private function get_categories() {
+        if (is_null($this->categories)) {
+            $this->categories = get_terms(array('taxonomy' => 'category', 'hide_empty' => false));
+        }
+        return $this->categories;
     }
 
     public function get_keywords_data(WP_REST_Request $request) {
-        $page = $request->get_param('page') ? intval($request->get_param('page')) : 1;
-        $limit = $request->get_param('limit') ? intval($request->get_param('limit')) : 10;
+        $page = max(1, intval($request->get_param('page')));
+        $limit = max(1, intval($request->get_param('limit') ?: self::DEFAULT_LIMIT));
     
         $offset = ($page - 1) * $limit;
     
@@ -34,26 +51,30 @@ class Gen_Key_Table {
         return new WP_REST_Response([
             'success' => true,
             'keywords' => $paged_keywords,
-            'users' => $this->users,
-            'categories' => $this->categories,
+            'users' => $this->get_users(),
+            'categories' => $this->get_categories(),
             'current_page' => $page,
             'total_keywords' => count($this->keywords),
             'total_pages' => ceil(count($this->keywords) / $limit)
         ], 200);
-    }
-    
+    }    
 
     public function update_keyword_mapping(WP_REST_Request $request) {
         $keyword = $request->get_param('keyword');
         $userId = $request->get_param('userId');
         $termId = $request->get_param('termId');
 
+        if(empty($keyword) || !is_numeric($userId) || !is_numeric($termId)) {
+            error_log("Invalid parameters provided for update_keyword_mapping.");
+            return new WP_REST_Response(['success' => false, 'message' => 'Invalid parameters provided'], 400);
+        }
+
         $result = $this->db->update_keyword_mapping($keyword, $userId, $termId);
         if ($result === false) {
             return new WP_REST_Response(['success' => false, 'message' => 'Failed to update keyword mapping'], 500);
         }
 
-        $this->keywords = $this->db->get_keywords();
+        $this->refresh_keywords();
         return new WP_REST_Response(['success' => true, 'keyword' => $keyword, 'userId' => $userId, 'termId' => $termId], 200);
     }
 
@@ -65,7 +86,7 @@ class Gen_Key_Table {
             return new WP_REST_Response(['success' => false, 'message' => 'Failed to delete keywords'], 500);
         }
 
-        $this->keywords = $this->db->get_keywords();
+        $this->refresh_keywords();
         return new WP_REST_Response(['success' => true], 200);
     }
 
@@ -93,7 +114,7 @@ class Gen_Key_Table {
             return new WP_REST_Response(['success' => false, 'message' => 'Failed to update keyword'], 500);
         }
 
-        $this->keywords = $this->db->get_keywords();
+        $this->refresh_keywords();
         return new WP_REST_Response(['success' => true], 200);
     }
 }

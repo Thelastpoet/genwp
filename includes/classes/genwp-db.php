@@ -92,9 +92,9 @@ class genWP_Db {
             // If the keyword doesn't exist, add it to the database
             if (!$existingKeyword) {
                 $data = array(
-                    'keyword' => $keyword,
-                    'title'   => $title,
-                    'taxonomy_term' => $taxonomy_term,
+                    'keyword' => sanitize_text_field($keyword),
+                    'title'   => sanitize_text_field($title),
+                    'taxonomy_term' => sanitize_text_field($taxonomy_term),
                 );
                 $data_format = array('%s', '%s', '%s');
 

@@ -2613,14 +2613,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _wordpress_element__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_wordpress_element__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "react");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! react-dom */ "react-dom");
-/* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../services/api */ "./src/services/api.js");
-/* harmony import */ var _hooks_useErrorHandler__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../hooks/useErrorHandler */ "./src/hooks/useErrorHandler.js");
-/* harmony import */ var _hooks_useNotification__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../hooks/useNotification */ "./src/hooks/useNotification.js");
-/* harmony import */ var _GenPagination__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./GenPagination */ "./src/components/GenPagination.js");
-/* harmony import */ var _style_genwp_css__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../style/genwp.css */ "./src/style/genwp.css");
-
+/* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../services/api */ "./src/services/api.js");
+/* harmony import */ var _hooks_useErrorHandler__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../hooks/useErrorHandler */ "./src/hooks/useErrorHandler.js");
+/* harmony import */ var _hooks_useNotification__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../hooks/useNotification */ "./src/hooks/useNotification.js");
+/* harmony import */ var _GenPagination__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./GenPagination */ "./src/components/GenPagination.js");
+/* harmony import */ var _style_genwp_css__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../style/genwp.css */ "./src/style/genwp.css");
 
 
 
@@ -2638,8 +2635,8 @@ const KeywordsTable = () => {
   const [deleting, setDeleting] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
   const [selectedUser, setSelectedUser] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({});
   const [selectedCategory, setSelectedCategory] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({});
-  const [error, handleError, clearError] = (0,_hooks_useErrorHandler__WEBPACK_IMPORTED_MODULE_4__["default"])();
-  const [notification, showNotification, clearNotification] = (0,_hooks_useNotification__WEBPACK_IMPORTED_MODULE_5__["default"])();
+  const [error, handleError, clearError] = (0,_hooks_useErrorHandler__WEBPACK_IMPORTED_MODULE_3__["default"])();
+  const [notification, showNotification, clearNotification] = (0,_hooks_useNotification__WEBPACK_IMPORTED_MODULE_4__["default"])();
   const [selectAllChecked, setSelectAllChecked] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
 
   // Pagination
@@ -2656,16 +2653,14 @@ const KeywordsTable = () => {
   const fetchData = async (page, limit) => {
     setLoading(true);
     try {
-      const keywordsData = await _services_api__WEBPACK_IMPORTED_MODULE_3__["default"].getKeywords(page, limit);
-      const usersData = await _services_api__WEBPACK_IMPORTED_MODULE_3__["default"].getUsers();
-      const categoriesData = await _services_api__WEBPACK_IMPORTED_MODULE_3__["default"].getCategories();
-      react_dom__WEBPACK_IMPORTED_MODULE_2___default().unstable_batchedUpdates(() => {
-        setKeywords(keywordsData.data.keywords || []);
-        setUsers(usersData.data);
-        setCategories(categoriesData.data);
-        setTotalItems(keywordsData.data.total || 1000);
-        setLoading(false);
-      });
+      const keywordsData = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].getKeywords(page, limit);
+      const usersData = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].getUsers();
+      const categoriesData = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].getCategories();
+      setKeywords(keywordsData.data.keywords || []);
+      setUsers(usersData.data);
+      setCategories(categoriesData.data);
+      setTotalItems(keywordsData.data.total || 1000);
+      setLoading(false);
     } catch (error) {
       console.error('An error occurred while fetching data:', error);
     }
@@ -2684,7 +2679,7 @@ const KeywordsTable = () => {
     const oldKeyword = keyword.keyword;
     const newKeyword = keyword.editedKeyword;
     try {
-      const response = await _services_api__WEBPACK_IMPORTED_MODULE_3__["default"].updateKeyword(oldKeyword, newKeyword);
+      const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].updateKeyword(oldKeyword, newKeyword);
       if (response.data.success) {
         showNotification('Keyword updated successfully.');
         setEditingKeywordId(null);
@@ -2722,7 +2717,7 @@ const KeywordsTable = () => {
   };
   const KeywordMapping = async (keyword, userId, termId) => {
     try {
-      const response = await _services_api__WEBPACK_IMPORTED_MODULE_3__["default"].mapKeyword(keyword, userId, termId);
+      const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].mapKeyword(keyword, userId, termId);
       if (response.data.success) {
         showNotification('Keyword mapping updated successfully.');
         fetchData();
@@ -2740,7 +2735,7 @@ const KeywordsTable = () => {
   const keywordsDelete = async () => {
     setDeleting(true);
     try {
-      const response = await _services_api__WEBPACK_IMPORTED_MODULE_3__["default"].deleteKeywords(selectedKeywords);
+      const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].deleteKeywords(selectedKeywords);
       if (response.data.success) {
         showNotification('Keywords deleted successfully.');
         // Filter out the deleted keywords from the state
@@ -2756,7 +2751,7 @@ const KeywordsTable = () => {
     setDeleting(false);
   };
   const WriteArticles = async () => {
-    const response = await _services_api__WEBPACK_IMPORTED_MODULE_3__["default"].writeArticles(selectedKeywords);
+    const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].writeArticles(selectedKeywords);
     if (response.data.success) {
       showNotification('Articles scheduled successfully.');
     } else {
@@ -2904,7 +2899,7 @@ const KeywordsTable = () => {
     className: "w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
   }, "Delete Keywords"), deleting && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "text-red-600"
-  }, "Deleting...")), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_GenPagination__WEBPACK_IMPORTED_MODULE_6__["default"], {
+  }, "Deleting...")), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_GenPagination__WEBPACK_IMPORTED_MODULE_5__["default"], {
     totalItems: totalItems,
     itemsPerPage: itemsPerPage,
     currentPage: currentPage,
