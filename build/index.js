@@ -2250,9 +2250,16 @@ function APIKeyField({
     try {
       setMessage('Retrieving API Key...');
       const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].getAPIKey(keyType);
-      setApiKey(response.data.key);
-      setInitialApiKey(response.data.key);
-      setMessage('');
+      const retrievedKey = response.data.key || '';
+      setApiKey(retrievedKey);
+      setInitialApiKey(retrievedKey);
+      if (!retrievedKey) {
+        setMessage('Please set your API key.');
+        setEditing(true);
+      } else {
+        setMessage('');
+        setEditing(true);
+      }
     } catch (error) {
       setMessage(`Error: ${error.message}`);
     }
@@ -2638,6 +2645,7 @@ const KeywordsTable = () => {
   const [error, handleError, clearError] = (0,_hooks_useErrorHandler__WEBPACK_IMPORTED_MODULE_3__["default"])();
   const [notification, showNotification, clearNotification] = (0,_hooks_useNotification__WEBPACK_IMPORTED_MODULE_4__["default"])();
   const [selectAllChecked, setSelectAllChecked] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
+  const [mappedKeywords, setMappedKeywords] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
 
   // Pagination
   const [currentPage, setCurrentPage] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(1);
@@ -2712,6 +2720,7 @@ const KeywordsTable = () => {
         userId: userId,
         categoryId: termId
       } : kw);
+      setMappedKeywords(prev => [...prev, keyword]);
       setKeywords(updatedKeywords);
     }
   };
@@ -2887,7 +2896,7 @@ const KeywordsTable = () => {
     type: "button",
     onClick: () => mapKeyword(keyword.keyword, selectedUser[keyword.id], selectedCategory[keyword.id]),
     className: "w-full sm:w-auto bg-black hover:bg-blue-600 text-white px-4 py-2 rounded"
-  }, "Map Keyword"))))))), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }, mappedKeywords.includes(keyword.keyword) ? 'Mapped' : 'Map Keyword'))))))), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0 sm:space-x-4"
   }, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("button", {
     type: "button",
@@ -3210,7 +3219,7 @@ __webpack_require__.r(__webpack_exports__);
 const Settings = () => {
   const [activeTab, setActiveTab] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('openai');
   const settings = {
-    'genwp-openai-api-key': '',
+    'openai-api-key': '',
     'model': '',
     'max_tokens': '',
     'temperature': '',
@@ -3466,7 +3475,12 @@ const API = {
     }
   }),
   // APIKeyField.js APIs
-  getAPIKey: keyType => baseAPI.get(`get-${keyType}-api-key`),
+  getAPIKey: keyType => {
+    return baseAPI.get(`get-${keyType}-api-key`).catch(error => {
+      console.error('Error fetching API Key:', error);
+      throw error;
+    });
+  },
   saveAPIKey: (keyType, apiKey) => baseAPI.post(`${keyType}-api-key`, {
     key: apiKey
   })

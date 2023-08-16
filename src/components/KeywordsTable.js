@@ -19,6 +19,7 @@ const KeywordsTable = () => {
   const [error, handleError, clearError] = useErrorHandler();
   const [notification, showNotification, clearNotification] = useNotification();
   const [selectAllChecked, setSelectAllChecked] = useState(false);
+  const [mappedKeywords, setMappedKeywords] = useState([]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -97,6 +98,7 @@ const KeywordsTable = () => {
       const updatedKeywords = keywords.map(kw => 
         kw.keyword === keyword ? { ...kw, userId: userId, categoryId: termId } : kw
       );
+      setMappedKeywords(prev => [...prev, keyword]);
       setKeywords(updatedKeywords);
     }
   };
@@ -284,13 +286,14 @@ const KeywordsTable = () => {
                       )}
                       </td>
                       <td className="px-6 py-4">
-                        <button
-                          type="button"
-                          onClick={() => mapKeyword(keyword.keyword, selectedUser[keyword.id], selectedCategory[keyword.id])}
-                          className="w-full sm:w-auto bg-black hover:bg-blue-600 text-white px-4 py-2 rounded"
-                        >
-                          Map Keyword
-                        </button>
+                      <button
+                        type="button"
+                        onClick={() => mapKeyword(keyword.keyword, selectedUser[keyword.id], selectedCategory[keyword.id])}
+                        className="w-full sm:w-auto bg-black hover:bg-blue-600 text-white px-4 py-2 rounded"
+                      >
+                        {mappedKeywords.includes(keyword.keyword) ? 'Mapped' : 'Map Keyword'}
+                      </button>
+
                       </td>
                     </tr>
                   ))}

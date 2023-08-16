@@ -41,7 +41,13 @@ const API = {
     }),
 
     // APIKeyField.js APIs
-    getAPIKey: (keyType) => baseAPI.get(`get-${keyType}-api-key`),
+    getAPIKey: (keyType) => {
+        return baseAPI.get(`get-${keyType}-api-key`)
+            .catch(error => {
+                console.error('Error fetching API Key:', error);
+                throw error;
+            });
+    },
     saveAPIKey: (keyType, apiKey) => baseAPI.post(`${keyType}-api-key`, { key: apiKey }),
 };
 

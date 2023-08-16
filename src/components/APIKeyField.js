@@ -52,9 +52,17 @@ function APIKeyField({ keyType }) {
             setMessage('Retrieving API Key...');
             const response = await API.getAPIKey(keyType);
 
-            setApiKey(response.data.key);
-            setInitialApiKey(response.data.key);
-            setMessage('');
+            const retrievedKey = response.data.key || '';
+            setApiKey(retrievedKey);
+            setInitialApiKey(retrievedKey);
+
+            if (!retrievedKey) {
+                setMessage( 'Please set your API key.' );
+                setEditing(true);
+            } else {
+                setMessage('');
+                setEditing(true);
+            }
         } catch (error) {
             setMessage(`Error: ${error.message}`);
         }

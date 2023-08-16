@@ -155,7 +155,7 @@ class GenWP_Rest extends \WP_REST_Controller {
         $keyType = $request->get_param('keyType');
         $key = $request->get_param('key');
 
-        $result = update_option($keyType, $key);
+        $result = update_option("genwp_{$keyType}_api_key", $key);
 
         if ($result) {
             return rest_ensure_response(['success' => true, 'message' => 'API Key saved successfully!']);
@@ -168,12 +168,12 @@ class GenWP_Rest extends \WP_REST_Controller {
     public function get_api_key(\WP_REST_Request $request) {
         $keyType = $request->get_param('keyType');
 
-        $api_key = get_option($keyType);
+        $api_key = get_option("genwp_{$keyType}_api_key");
 
         if ($api_key) {
             return rest_ensure_response(['success' => true, 'key' => $api_key]);
         } else {
-            return new \WP_Error('no_api_key_found', 'No API Key found for this type.', ['status' => 404]);
+            return rest_ensure_response(['success' => false, 'message' => 'API Key not set for this type.']);
         }
         
     }
@@ -225,7 +225,7 @@ class GenWP_Rest extends \WP_REST_Controller {
 
     public function get_settings() {
         $settings_keys = [
-            'genwp-openai-api-key',
+            'openai_api_key',
             'model',
             'max_tokens',
             'temperature',

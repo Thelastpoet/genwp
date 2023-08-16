@@ -8,7 +8,7 @@ import Documentation from './Docs';
 const Settings = () => {
     const [activeTab, setActiveTab] = useState('openai');
     const settings = {
-        'genwp-openai-api-key': '',
+        'openai-api-key': '',
         'model': '',
         'max_tokens': '',
         'temperature': '',
