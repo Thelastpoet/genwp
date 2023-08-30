@@ -21,7 +21,7 @@ function APIKeyField({ keyType }) {
             return;
         }
         if (apiKey.length > 60) {
-            setMessage('API Key must be less than 56 characters');
+            setMessage('API Key must be less than 60 characters');
             return;
         }        
         try {
@@ -75,10 +75,11 @@ function APIKeyField({ keyType }) {
     return (
         <div className="flex flex-col sm:flex-row items-center">
             <div className="w-full sm:w-96 mr-0 sm:mr-4">
+                <p>{message}</p>
                 <input 
                     type="text" 
                     name={`genwp-${keyType}-api-key`} 
-                    value={message || (editing ? apiKey : 'API Key Saved')}
+                    value={editing ? apiKey : 'API Key Saved'}
                     onChange={handleChange} 
                     readOnly={!editing} 
                     className="border p-2 rounded w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none" 
