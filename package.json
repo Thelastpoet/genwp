@@ -29,8 +29,12 @@
     "tailwindcss": "^3.3.3"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^1.9.5",
     "postcss-cli": "^10.1.0",
     "prop-types": "^15.8.1",
-    "react-responsive-pagination": "^2.2.2"
+    "react-redux": "^8.1.2",
+    "react-responsive-pagination": "^2.2.2",
+    "redux": "^4.2.1",
+    "redux-thunk": "^2.4.2"
   }
 }
