@@ -22,7 +22,7 @@ class genwp_Writer {
         $this->featured_image = $featured_image;
     }  
 
-    public function gen_article($keyword, $num_words = 2500, $args = array()) {
+    public function gen_article($keyword, $num_words = 8000, $args = array()) {
         // Initiate generate articles
 
         if (!is_array($args)) {
