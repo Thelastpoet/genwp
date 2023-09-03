@@ -11,8 +11,7 @@ class ImageGenerator {
 
     public function __construct() {
         // API Key
-        $settings = get_option('genwp_settings', []);
-        $this->pexels_api_key = isset($settings['pexels_api_key']) ? $settings['pexels-api-key'] : '';
+        $this->pexels_api_key = get_option('genwp_pexels_api_key');
     }
 
     public function pexels_generate_image( $keyword, $orientation = 'landscape', $size = 'large' ) {

@@ -20,7 +20,7 @@ class OpenAIGenerator {
     public function __construct() {
         $settings = get_option('genwp_settings', array());
 
-        $this->api_key = isset($settings['genwp-openai-api-key']) ? $settings['genwp-openai-api-key'] : '';
+        $this->api_key = get_option('genwp_genwp-openai_api_key');
         $this->model = isset($settings['model']) ? $settings['model'] : 'text-davinci-003';
        // $this->max_tokens = isset($settings['max_tokens']) ? (int) $settings['max_tokens'] : 10000;
         $this->temperature = isset($settings['temperature']) ? (float) $settings['temperature'] : 0.7;

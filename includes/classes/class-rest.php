@@ -188,20 +188,7 @@ class GenWP_Rest extends \WP_REST_Controller {
         $settings = $request->get_json_params();
 
         // Save the settings to the database
-        foreach ($settings as $key => $value) {
-            switch ($key) {
-                case 'max_tokens':
-                    $value = intval($value);
-                    break;
-                case 'temperature':
-                    $value = floatval($value);
-                    break;
-                default:
-                    $value = sanitize_text_field($value);
-                    break;
-            }
-            update_option($key, $value);
-        }
+        update_option('genwp_settings', $settings);
 
         return rest_ensure_response(['success' => true, 'message' => 'Settings saved successfully!']);
     }
@@ -224,22 +211,7 @@ class GenWP_Rest extends \WP_REST_Controller {
     }
 
     public function get_settings() {
-        $settings_keys = [
-            'openai_api_key',
-            'model',
-            'max_tokens',
-            'temperature',
-            'top_p',
-            'frequency_penalty',
-            'presence_penalty',
-            'pexels_api_key'
-
-        ];
-
-        $settings = [];
-        foreach ($settings_keys as $key) {
-            $settings[$key] = get_option($key);
-        }
+        $settings = get_option('genwp_settings', []);
 
         return rest_ensure_response($settings);
     }

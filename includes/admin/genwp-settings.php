@@ -28,6 +28,10 @@ class genwp_Settings {
     }
 
    public function display_settings_page() {
+    if (!current_user_can($this->capability)) {
+        return;
+    }
+    
     echo '<div class="wrap"><div id="genwp-admin"></div></div>';
    }
     
