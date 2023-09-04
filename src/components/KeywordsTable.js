@@ -6,52 +6,31 @@ import useNotification from '../hooks/useNotification';
 import Pagination from './GenPagination';
 import '../style/genwp.css';
 import { KeywordRow } from './KeywordRow';
+import useFetchData from '../hooks/useFetchData';
 
 const KeywordsTable = () => {
-  const [keywords, setKeywords] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedKeywords, setSelectedKeywords] = useState([]);
   const [editingKeywordId, setEditingKeywordId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [selectedUser, setSelectedUser] = useState({});
-  const [selectedCategory, setSelectedCategory] = useState({});  
+  const [selectedCategory, setSelectedCategory] = useState({});
   const [error, handleError, clearError] = useErrorHandler();
   const [notification, showNotification, clearNotification] = useNotification();
   const [selectAllChecked, setSelectAllChecked] = useState(false);
   const [mappedKeywords, setMappedKeywords] = useState([]);
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
 
+  const {
+    keywords,
+    setKeywords,
+    users,
+    categories,
+    loading,
+    totalItems,
+    fetchData,
+  } = useFetchData(currentPage, itemsPerPage);
   
-  useEffect(() => {
-    let isMounted = true;
-    fetchData(currentPage, itemsPerPage);
-    return () => { isMounted = false; };
-  }, [currentPage, itemsPerPage]);
-
-  const fetchData = async (page, limit) => {
-    setLoading(true);
-    try {
-      const keywordsData = await API.getKeywords(page, limit);
-      const usersData = await API.getUsers();
-      const categoriesData = await API.getCategories();
-      
-      setKeywords(keywordsData.data.keywords || []);
-      setUsers(usersData.data);
-      setCategories(categoriesData.data);
-      setTotalItems(keywordsData.data.total || 1000);
-      setLoading(false);
-      
-    } catch (error) {
-      console.error('An error occurred while fetching data:', error);
-    }
-    setLoading(false);
-  };
   
   const editKeyword = (keywordId, newKeywordValue) => {
     setKeywords(
