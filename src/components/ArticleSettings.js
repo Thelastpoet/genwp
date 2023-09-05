@@ -16,6 +16,7 @@ const ArticleSettings = (props) => {
     const [postTypes, setPostTypes] = useState([]);
     const [postStatuses, setPostStatuses] = useState([]);
     const [error, setError] = useState(null);
+    const abortController = new AbortController();
 
     // Fetch the current settings from WP
     const fetchSettings = async () => {
@@ -54,9 +55,11 @@ const ArticleSettings = (props) => {
         fetchData(API.fetchAuthors, setAuthors);
         fetchData(API.fetchPostTypes, setPostTypes);
         fetchData(API.fetchPostStatuses, setPostStatuses);
-    
-    }, []);
-    
+        
+        return () => {
+            abortController.abort();
+        };
+    }, []);    
 
     const handleChange = (e) => {
         const { name, value } = e.target;
