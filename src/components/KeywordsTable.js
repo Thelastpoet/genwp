@@ -21,6 +21,10 @@ const KeywordsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  const [selectedUserForAll, setSelectedUserForAll] = useState('');
+  const [selectedCategoryForAll, setSelectedCategoryForAll] = useState('');
+
+
   const {
     keywords,
     setKeywords,
@@ -144,6 +148,21 @@ const KeywordsTable = () => {
     // we will add more here
   };
 
+  const mapAllSelectedKeywords = async () => {
+    try {
+      const mappingPromises = selectedKeywords.map(keyword => 
+        mapKeyword(keyword, selectedUserForAll, selectedCategoryForAll)
+      );
+      
+      await Promise.all(mappingPromises);
+  
+    } catch(error) {
+      console.error('An error occurred while mapping all keywords:', error);
+    }
+  };
+  
+  
+
   return (
     <div className="container bg-gray-50 mx-auto p-4 space-y-4 w-full">
       <div className="mb-4">
@@ -225,16 +244,55 @@ const KeywordsTable = () => {
               </tbody>
             </table>
           </div>
+
+          <div className="bulk-actions flex flex-col md:flex-row items-start md:items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+              <div className="flex flex-col space-y-2">
+                <select 
+                  className="p-2 border rounded w-full md:w-auto"
+                  onChange={(e) => setSelectedUserForAll(e.target.value)}
+                >
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col space-y-2">
+                <select 
+                  className="p-2 border rounded w-full md:w-auto"
+                  onChange={(e) => setSelectedCategoryForAll(e.target.value)}
+                >
+                  {categories.map(category => (
+                    <option key={category.term_id} value={category.term_id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center">
+                <button 
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+                  onClick={mapAllSelectedKeywords}
+                >
+                  Map All Keywords
+                </button>
+              </div>
+          </div>
+
+          <div className="border-t mt-4 mb-4"></div>
   
           <div className="flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0 sm:space-x-4">
             <button type="button" onClick={WriteArticles} className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
               Write Articles
-            </button>
+            </button>            
+            
             <button type="button" onClick={keywordsDelete} className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
               Delete Keywords
             </button>
             {deleting && <div className="text-red-600">Deleting...</div>}
-          </div>  
+          </div>
+           
           <Pagination
            totalItems={totalItems} 
            itemsPerPage={itemsPerPage} 

@@ -2755,6 +2755,8 @@ const KeywordsTable = () => {
   const [mappedKeywords, setMappedKeywords] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
   const [currentPage, setCurrentPage] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(1);
   const [itemsPerPage, setItemsPerPage] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(10);
+  const [selectedUserForAll, setSelectedUserForAll] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('');
+  const [selectedCategoryForAll, setSelectedCategoryForAll] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('');
   const {
     keywords,
     setKeywords,
@@ -2870,6 +2872,14 @@ const KeywordsTable = () => {
     // we will add more here
   };
 
+  const mapAllSelectedKeywords = async () => {
+    try {
+      const mappingPromises = selectedKeywords.map(keyword => mapKeyword(keyword, selectedUserForAll, selectedCategoryForAll));
+      await Promise.all(mappingPromises);
+    } catch (error) {
+      console.error('An error occurred while mapping all keywords:', error);
+    }
+  };
   return (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "container bg-gray-50 mx-auto p-4 space-y-4 w-full"
   }, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
@@ -2937,6 +2947,31 @@ const KeywordsTable = () => {
     setSelectedKeywords: setSelectedKeywords,
     mappedKeywords: mappedKeywords
   }))))), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "bulk-actions flex flex-col md:flex-row items-start md:items-center justify-center space-y-4 md:space-y-0 md:space-x-4"
+  }, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "flex flex-col space-y-2"
+  }, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("select", {
+    className: "p-2 border rounded w-full md:w-auto",
+    onChange: e => setSelectedUserForAll(e.target.value)
+  }, users.map(user => (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("option", {
+    key: user.id,
+    value: user.id
+  }, user.name)))), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "flex flex-col space-y-2"
+  }, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("select", {
+    className: "p-2 border rounded w-full md:w-auto",
+    onChange: e => setSelectedCategoryForAll(e.target.value)
+  }, categories.map(category => (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("option", {
+    key: category.term_id,
+    value: category.term_id
+  }, category.name)))), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "flex items-center"
+  }, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("button", {
+    className: "bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded",
+    onClick: mapAllSelectedKeywords
+  }, "Map All Keywords"))), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+    className: "border-t mt-4 mb-4"
+  }), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0 sm:space-x-4"
   }, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("button", {
     type: "button",
@@ -3453,14 +3488,15 @@ const useFetchData = (currentPage, itemsPerPage) => {
   const fetchData = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(async () => {
     setLoading(true);
     setError(null);
+    const fetchKeywords = _services_api__WEBPACK_IMPORTED_MODULE_1__["default"].getKeywords(currentPage, itemsPerPage);
+    const fetchUsers = _services_api__WEBPACK_IMPORTED_MODULE_1__["default"].getUsers();
+    const fetchCategories = _services_api__WEBPACK_IMPORTED_MODULE_1__["default"].getCategories();
     try {
-      const keywordsData = await _services_api__WEBPACK_IMPORTED_MODULE_1__["default"].getKeywords(currentPage, itemsPerPage);
-      const usersData = await _services_api__WEBPACK_IMPORTED_MODULE_1__["default"].getUsers();
-      const categoriesData = await _services_api__WEBPACK_IMPORTED_MODULE_1__["default"].getCategories();
-      setKeywords(keywordsData.data.keywords || []);
-      setUsers(usersData.data);
-      setCategories(categoriesData.data);
-      setTotalItems(keywordsData.data.total || 1000);
+      const [keywordsData, usersData, categoriesData] = await Promise.all([fetchKeywords, fetchUsers, fetchCategories]);
+      setKeywords(keywordsData?.data?.keywords || []);
+      setUsers(usersData?.data || []);
+      setCategories(categoriesData?.data || []);
+      setTotalItems(keywordsData?.data?.total || 1000);
     } catch (error) {
       console.error('An error occurred while fetching data:', error);
       setError(error);
