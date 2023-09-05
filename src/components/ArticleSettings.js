@@ -24,7 +24,7 @@ const ArticleSettings = (props) => {
             let loadedSettings = fetchFromLocalStorage('genwp-article-settings');
     
             // Check if data is older than 1 hour
-            const oneHour = 60 * 60 * 1000; // milliseconds
+            const oneHour = 60 * 60 * 1000;
             const now = new Date().getTime();
             if (!loadedSettings || (now - loadedSettings.timestamp > oneHour)) {
                 const response = await API.fetchArticleSettings();
