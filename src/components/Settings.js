@@ -7,16 +7,6 @@ import Documentation from './Docs';
 
 const Settings = () => {
     const [activeTab, setActiveTab] = useState('openai');
-    const settings = {
-        'openai-api-key': '',
-        'model': '',
-        'max_tokens': '',
-        'temperature': '',
-        'frequency_penalty': '',
-        'presence_penalty': '',
-        'pexels-api-key': ''
-    };
-
     return (
         <React.Fragment>
             <h2 className="text-2xl font-bold mb-4">GenWP Settings</h2>
@@ -29,8 +19,8 @@ const Settings = () => {
                         <button className={`px-4 py-2 flex-1 ${activeTab === 'keywordsTable' ? 'bg-blue-500 text-white' : 'bg-matte-black text-white hover:bg-blue-500'}`} onClick={() => setActiveTab('keywordsTable')}>Keywords</button>
                     </div>
                     <div className="settings-content">
-                        {activeTab === 'openai' && <OpenAISettings settings={settings} />}
-                        {activeTab === 'article' && <ArticleSettings settings={settings} />}
+                        {activeTab === 'openai' && <OpenAISettings />}
+                        {activeTab === 'article' && <ArticleSettings />}
                         {activeTab === 'uploadKeywords' && <UploadKeywords />}
                         {activeTab === 'keywordsTable' && <KeywordsTable />}
                     </div>

@@ -1,37 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { saveToLocalStorage, fetchFromLocalStorage, fetchFromServer } from '../utils/utils';
 
 import APIKeyField from './APIKeyField';
 
-const OpenAISettings = (props) => {
-    const [settings, setSettings] = useState(props.settings);
+const OpenAISettings = () => {
+    const [settings, setSettings] = useState({
+        'genwp-openai-api-key': '',
+        'model': '',
+        'max_tokens': '',
+        'temperature': '',
+        'top_p': '',
+        'frequency_penalty': '',
+        'presence_penalty': '',
+        'pexels_api_key': ''
+    });
+      
     const [showOpenAIKey, setShowOpenAIKey] = useState(false);
     const [showPexelsKey, setShowPexelsKey] = useState(false);
     const [status, setStatus] = useState('idle');
 
     // Fetch the current settings from WP
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async () => {
         try {
-            let loadedSettings;
-            const cachedSettings = localStorage.getItem('genwp-settings');
-            if (cachedSettings) {
-                loadedSettings = JSON.parse(cachedSettings);
-            } else {
-                const url = '/wp-json/genwp/v1/settings';
-                const response = await axios.get(url);
-                loadedSettings = response.data;
-                localStorage.setItem('genwp-settings', JSON.stringify(loadedSettings));
+            let loadedSettings = fetchFromLocalStorage('genwp-settings');
+
+            if (!loadedSettings) {
+                loadedSettings = await fetchFromServer('wp-json/genwp/v1/settings');
+                saveToLocalStorage('genwp-settings', loadedSettings);
             }
-            setSettings(loadedSettings);
+    
+            const completeSettings = {
+                'genwp-openai-api-key': '',
+                'model': '',
+                'max_tokens': '',
+                'temperature': '',
+                'top_p': '',
+                'frequency_penalty': '',
+                'presence_penalty': '',
+                'pexels_api_key': '',
+                ...loadedSettings
+            };
+
+            // Replace undefined values with defaults
+            Object.keys(completeSettings).forEach(key => {
+                if (completeSettings[key] === undefined) {
+                    completeSettings[key] = '';
+                }
+            });
+    
+            setSettings(completeSettings);
         } catch (error) {
             console.error('Error fetching settings:', error);
         }
-    };
+    }, []);
 
     // Load FetchSettings 
     useEffect(() => {
         fetchSettings();
-    }, []);
+    }, [fetchSettings]);
 
     // Models
     const models = [
@@ -62,7 +89,7 @@ const OpenAISettings = (props) => {
             };
 
             await axios.post(url, settings, config);
-            localStorage.setItem('genwp-settings', JSON.stringify(settings));
+            saveToLocalStorage('genwp-settings', settings);
             setStatus('saved');
             fetchSettings();
         } catch (error) {

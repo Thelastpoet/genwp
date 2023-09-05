@@ -2304,6 +2304,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react */ "react");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _services_api__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../services/api */ "./src/services/api.js");
+/* harmony import */ var _utils_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/utils */ "./src/utils/utils.js");
+
 
 
 
@@ -2326,10 +2328,15 @@ const ArticleSettings = props => {
   // Fetch the current settings from WP
   const fetchSettings = async () => {
     try {
-      const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchArticleSettings();
+      let loadedSettings = (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.fetchFromLocalStorage)('genwp-article-settings');
+      if (!loadedSettings) {
+        const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchArticleSettings();
+        loadedSettings = response.data;
+        (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.saveToLocalStorage)('genwp-article-settings', loadedSettings);
+      }
       setSettings({
         ...defaultSettings,
-        ...response.data
+        ...loadedSettings
       });
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -2382,6 +2389,7 @@ const ArticleSettings = props => {
     setStatus('saving');
     try {
       await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].saveArticleSettings(settings);
+      (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.saveToLocalStorage)('genwp-article-settings', settings);
       setStatus('saved');
       fetchSettings();
     } catch (error) {
@@ -3012,40 +3020,64 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _APIKeyField__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./APIKeyField */ "./src/components/APIKeyField.js");
+/* harmony import */ var _utils_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/utils */ "./src/utils/utils.js");
+/* harmony import */ var _APIKeyField__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./APIKeyField */ "./src/components/APIKeyField.js");
 
 
 
 
-const OpenAISettings = props => {
-  const [settings, setSettings] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(props.settings);
+
+const OpenAISettings = () => {
+  const [settings, setSettings] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)({
+    'genwp-openai-api-key': '',
+    'model': '',
+    'max_tokens': '',
+    'temperature': '',
+    'top_p': '',
+    'frequency_penalty': '',
+    'presence_penalty': '',
+    'pexels_api_key': ''
+  });
   const [showOpenAIKey, setShowOpenAIKey] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
   const [showPexelsKey, setShowPexelsKey] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(false);
   const [status, setStatus] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('idle');
 
   // Fetch the current settings from WP
-  const fetchSettings = async () => {
+  const fetchSettings = (0,react__WEBPACK_IMPORTED_MODULE_1__.useCallback)(async () => {
     try {
-      let loadedSettings;
-      const cachedSettings = localStorage.getItem('genwp-settings');
-      if (cachedSettings) {
-        loadedSettings = JSON.parse(cachedSettings);
-      } else {
-        const url = '/wp-json/genwp/v1/settings';
-        const response = await axios__WEBPACK_IMPORTED_MODULE_2___default().get(url);
-        loadedSettings = response.data;
-        localStorage.setItem('genwp-settings', JSON.stringify(loadedSettings));
+      let loadedSettings = (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.fetchFromLocalStorage)('genwp-settings');
+      if (!loadedSettings) {
+        loadedSettings = await (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.fetchFromServer)('wp-json/genwp/v1/settings');
+        (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.saveToLocalStorage)('genwp-settings', loadedSettings);
       }
-      setSettings(loadedSettings);
+      const completeSettings = {
+        'genwp-openai-api-key': '',
+        'model': '',
+        'max_tokens': '',
+        'temperature': '',
+        'top_p': '',
+        'frequency_penalty': '',
+        'presence_penalty': '',
+        'pexels_api_key': '',
+        ...loadedSettings
+      };
+
+      // Replace undefined values with defaults
+      Object.keys(completeSettings).forEach(key => {
+        if (completeSettings[key] === undefined) {
+          completeSettings[key] = '';
+        }
+      });
+      setSettings(completeSettings);
     } catch (error) {
       console.error('Error fetching settings:', error);
     }
-  };
+  }, []);
 
   // Load FetchSettings 
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
     fetchSettings();
-  }, []);
+  }, [fetchSettings]);
 
   // Models
   const models = [{
@@ -3080,7 +3112,7 @@ const OpenAISettings = props => {
         }
       };
       await axios__WEBPACK_IMPORTED_MODULE_2___default().post(url, settings, config);
-      localStorage.setItem('genwp-settings', JSON.stringify(settings));
+      (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.saveToLocalStorage)('genwp-settings', settings);
       setStatus('saved');
       fetchSettings();
     } catch (error) {
@@ -3140,7 +3172,7 @@ const OpenAISettings = props => {
     className: "text-blue-500",
     href: "https://beta.openai.com/account/api-keys",
     target: "_blank"
-  }, "OpenAI website"), "."), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_APIKeyField__WEBPACK_IMPORTED_MODULE_3__["default"], {
+  }, "OpenAI website"), "."), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_APIKeyField__WEBPACK_IMPORTED_MODULE_4__["default"], {
     keyType: "genwp-openai"
   })), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "flex flex-col mb-4 border-b border-gray-200 pb-4"
@@ -3252,7 +3284,7 @@ const OpenAISettings = props => {
     className: "text-blue-500",
     href: "https://www.pexels.com/api/new/",
     target: "_blank"
-  }, "Pexels website"), "."), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_APIKeyField__WEBPACK_IMPORTED_MODULE_3__["default"], {
+  }, "Pexels website"), "."), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_APIKeyField__WEBPACK_IMPORTED_MODULE_4__["default"], {
     keyType: "pexels"
   })), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", null, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("input", {
     type: "submit",
@@ -3293,15 +3325,6 @@ __webpack_require__.r(__webpack_exports__);
 
 const Settings = () => {
   const [activeTab, setActiveTab] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)('openai');
-  const settings = {
-    'openai-api-key': '',
-    'model': '',
-    'max_tokens': '',
-    'temperature': '',
-    'frequency_penalty': '',
-    'presence_penalty': '',
-    'pexels-api-key': ''
-  };
   return (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)((react__WEBPACK_IMPORTED_MODULE_1___default().Fragment), null, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("h2", {
     className: "text-2xl font-bold mb-4"
   }, "GenWP Settings"), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
@@ -3324,11 +3347,7 @@ const Settings = () => {
     onClick: () => setActiveTab('keywordsTable')
   }, "Keywords")), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "settings-content"
-  }, activeTab === 'openai' && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_OpenAISettings__WEBPACK_IMPORTED_MODULE_2__["default"], {
-    settings: settings
-  }), activeTab === 'article' && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_ArticleSettings__WEBPACK_IMPORTED_MODULE_3__["default"], {
-    settings: settings
-  }), activeTab === 'uploadKeywords' && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_UploadKeywords__WEBPACK_IMPORTED_MODULE_4__["default"], null), activeTab === 'keywordsTable' && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_KeywordsTable__WEBPACK_IMPORTED_MODULE_5__["default"], null))), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
+  }, activeTab === 'openai' && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_OpenAISettings__WEBPACK_IMPORTED_MODULE_2__["default"], null), activeTab === 'article' && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_ArticleSettings__WEBPACK_IMPORTED_MODULE_3__["default"], null), activeTab === 'uploadKeywords' && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_UploadKeywords__WEBPACK_IMPORTED_MODULE_4__["default"], null), activeTab === 'keywordsTable' && (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_KeywordsTable__WEBPACK_IMPORTED_MODULE_5__["default"], null))), (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)("div", {
     className: "w-full md:w-1/4 p-4 md:border-l"
   }, (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_0__.createElement)(_Docs__WEBPACK_IMPORTED_MODULE_6__["default"], {
     activeTab: activeTab
@@ -3620,6 +3639,41 @@ const API = {
   })
 };
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (API);
+
+/***/ }),
+
+/***/ "./src/utils/utils.js":
+/*!****************************!*\
+  !*** ./src/utils/utils.js ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   fetchFromLocalStorage: () => (/* binding */ fetchFromLocalStorage),
+/* harmony export */   fetchFromServer: () => (/* binding */ fetchFromServer),
+/* harmony export */   saveToLocalStorage: () => (/* binding */ saveToLocalStorage)
+/* harmony export */ });
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(axios__WEBPACK_IMPORTED_MODULE_0__);
+
+const saveToLocalStorage = (key, data) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
+const fetchFromLocalStorage = key => {
+  const cachedData = localStorage.getItem(key);
+  return cachedData ? JSON.parse(cachedData) : null;
+};
+const fetchFromServer = async url => {
+  try {
+    const response = await axios__WEBPACK_IMPORTED_MODULE_0___default().get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching from server:', error);
+    return null;
+  }
+};
 
 /***/ }),
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import API from '../services/api';
+import { saveToLocalStorage, fetchFromLocalStorage  } from '../utils/utils';
 
 const ArticleSettings = (props) => {
     const defaultSettings = {
@@ -18,13 +19,20 @@ const ArticleSettings = (props) => {
     // Fetch the current settings from WP
     const fetchSettings = async () => {
         try {
-            const response = await API.fetchArticleSettings();
-            setSettings({ ...defaultSettings, ...response.data });
-
+            let loadedSettings = fetchFromLocalStorage('genwp-article-settings'); 
+    
+            if (!loadedSettings) {
+                const response = await API.fetchArticleSettings();
+                loadedSettings = response.data;
+                saveToLocalStorage('genwp-article-settings', loadedSettings);
+            }
+    
+            setSettings({ ...defaultSettings, ...loadedSettings });
         } catch (error) {
             console.error('Error fetching settings:', error);
         }
     };
+    
 
     // Fetch the current settings from WP
     const fetchAuthors = async () => {
@@ -75,6 +83,7 @@ const ArticleSettings = (props) => {
 
         try {
             await API.saveArticleSettings(settings);
+            saveToLocalStorage('genwp-article-settings', settings);
             setStatus('saved');
             fetchSettings();
         } catch (error) {
