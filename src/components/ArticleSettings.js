@@ -35,7 +35,7 @@ const ArticleSettings = (props) => {
                 });
             }
     
-            setSettings({ ...props.settings, ...defaultSettings });
+            setSettings({ ...defaultSettings, ...loadedSettings });
         } catch (error) {
             setError('Failed to fetch settings.');
         }
@@ -54,8 +54,7 @@ const ArticleSettings = (props) => {
     useEffect(() => {
         fetchData(API.fetchAuthors, setAuthors);
         fetchData(API.fetchPostTypes, setPostTypes);
-        fetchData(API.fetchPostStatuses, setPostStatuses);
-        
+        fetchData(API.fetchPostStatuses, setPostStatuses);        
         return () => {
             abortController.abort();
         };

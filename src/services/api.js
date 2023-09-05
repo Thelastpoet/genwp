@@ -34,7 +34,7 @@ const API = {
     fetchAuthors: () => baseAPI.get('authors'),
     fetchPostTypes: () => baseAPI.get('types'),
     fetchPostStatuses: () => baseAPI.get('statuses'),
-    saveArticleSettings: (settings, nonce) => baseAPI.post('article-settings', settings, {
+    saveArticleSettings: (settings) => baseAPI.post('article-settings', settings, {
         headers: {
             'Content-Type': 'application/json'
         }
