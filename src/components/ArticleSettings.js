@@ -15,59 +15,48 @@ const ArticleSettings = (props) => {
     const [authors, setAuthors] = useState([]);
     const [postTypes, setPostTypes] = useState([]);
     const [postStatuses, setPostStatuses] = useState([]);
+    const [error, setError] = useState(null);
 
     // Fetch the current settings from WP
     const fetchSettings = async () => {
         try {
-            let loadedSettings = fetchFromLocalStorage('genwp-article-settings'); 
+            let loadedSettings = fetchFromLocalStorage('genwp-article-settings');
     
-            if (!loadedSettings) {
+            // Check if data is older than 1 hour
+            const oneHour = 60 * 60 * 1000; // milliseconds
+            const now = new Date().getTime();
+            if (!loadedSettings || (now - loadedSettings.timestamp > oneHour)) {
                 const response = await API.fetchArticleSettings();
                 loadedSettings = response.data;
-                saveToLocalStorage('genwp-article-settings', loadedSettings);
+                saveToLocalStorage('genwp-article-settings', {
+                    data: loadedSettings,
+                    timestamp: now
+                });
             }
     
-            setSettings({ ...defaultSettings, ...loadedSettings });
+            setSettings({ ...props.settings, ...defaultSettings });
         } catch (error) {
-            console.error('Error fetching settings:', error);
+            setError('Failed to fetch settings.');
+        }
+    };    
+
+    // Fetch the current settings from WP
+    const fetchData = async (apiFunc, setDataFunc) => {
+        try {
+            const response = await apiFunc();
+            setDataFunc(response.data);
+        } catch (error) {
+            console.error(`Error fetching data: ${error}`);
         }
     };
     
-
-    // Fetch the current settings from WP
-    const fetchAuthors = async () => {
-        try {
-          const response = await API.fetchAuthors();
-          setAuthors(response.data);
-        } catch (error) {
-          console.error('Error fetching authors:', error);
-        }
-    };
-
-    const fetchPostTypes = async () => {
-        try {
-          const response = await API.fetchPostTypes();
-          setPostTypes(response.data);
-        } catch (error) {
-          console.error('Error fetching post types:', error);
-        }
-    };
-
-    const fetchPostStatuses = async () => {
-        try {
-          const response = await API.fetchPostStatuses();
-          setPostStatuses(response.data);
-        } catch (error) {
-          console.error('Error fetching post statuses:', error);
-        }
-    };
-
     useEffect(() => {
-        fetchSettings();
-        fetchAuthors();
-        fetchPostTypes();
-        fetchPostStatuses();
+        fetchData(API.fetchAuthors, setAuthors);
+        fetchData(API.fetchPostTypes, setPostTypes);
+        fetchData(API.fetchPostStatuses, setPostStatuses);
+    
     }, []);
+    
 
     const handleChange = (e) => {
         const { name, value } = e.target;

@@ -2324,55 +2324,46 @@ const ArticleSettings = props => {
   const [authors, setAuthors] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
   const [postTypes, setPostTypes] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
   const [postStatuses, setPostStatuses] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)([]);
+  const [error, setError] = (0,react__WEBPACK_IMPORTED_MODULE_1__.useState)(null);
 
   // Fetch the current settings from WP
   const fetchSettings = async () => {
     try {
       let loadedSettings = (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.fetchFromLocalStorage)('genwp-article-settings');
-      if (!loadedSettings) {
+
+      // Check if data is older than 1 hour
+      const oneHour = 60 * 60 * 1000; // milliseconds
+      const now = new Date().getTime();
+      if (!loadedSettings || now - loadedSettings.timestamp > oneHour) {
         const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchArticleSettings();
         loadedSettings = response.data;
-        (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.saveToLocalStorage)('genwp-article-settings', loadedSettings);
+        (0,_utils_utils__WEBPACK_IMPORTED_MODULE_3__.saveToLocalStorage)('genwp-article-settings', {
+          data: loadedSettings,
+          timestamp: now
+        });
       }
       setSettings({
-        ...defaultSettings,
-        ...loadedSettings
+        ...props.settings,
+        ...defaultSettings
       });
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      setError('Failed to fetch settings.');
     }
   };
 
   // Fetch the current settings from WP
-  const fetchAuthors = async () => {
+  const fetchData = async (apiFunc, setDataFunc) => {
     try {
-      const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchAuthors();
-      setAuthors(response.data);
+      const response = await apiFunc();
+      setDataFunc(response.data);
     } catch (error) {
-      console.error('Error fetching authors:', error);
-    }
-  };
-  const fetchPostTypes = async () => {
-    try {
-      const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchPostTypes();
-      setPostTypes(response.data);
-    } catch (error) {
-      console.error('Error fetching post types:', error);
-    }
-  };
-  const fetchPostStatuses = async () => {
-    try {
-      const response = await _services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchPostStatuses();
-      setPostStatuses(response.data);
-    } catch (error) {
-      console.error('Error fetching post statuses:', error);
+      console.error(`Error fetching data: ${error}`);
     }
   };
   (0,react__WEBPACK_IMPORTED_MODULE_1__.useEffect)(() => {
-    fetchSettings();
-    fetchAuthors();
-    fetchPostTypes();
-    fetchPostStatuses();
+    fetchData(_services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchAuthors, setAuthors);
+    fetchData(_services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchPostTypes, setPostTypes);
+    fetchData(_services_api__WEBPACK_IMPORTED_MODULE_2__["default"].fetchPostStatuses, setPostStatuses);
   }, []);
   const handleChange = e => {
     const {
