@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { saveToLocalStorage, fetchFromLocalStorage, fetchFromServer } from '../utils/utils';
+import { saveToLocalStorage, fetchFromLocalStorage } from '../utils/utils';
+import API from '../services/api';
 
 import APIKeyField from './APIKeyField';
 
@@ -26,7 +26,7 @@ const OpenAISettings = () => {
             let loadedSettings = fetchFromLocalStorage('genwp-settings');
 
             if (!loadedSettings) {
-                loadedSettings = await fetchFromServer('wp-json/genwp/v1/settings');
+                loadedSettings = await API.fetchSettings();
                 saveToLocalStorage('genwp-settings', loadedSettings);
             }
     
@@ -80,15 +80,8 @@ const OpenAISettings = () => {
         setStatus('saving');
 
         try {
-            const url = '/wp-json/genwp/v1/settings';
-            const config = {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': genwpLocal.nonce
-                }
-            };
+            await API.saveSettings(settings);
 
-            await axios.post(url, settings, config);
             saveToLocalStorage('genwp-settings', settings);
             setStatus('saved');
             fetchSettings();
