@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import API from '../services/api';
-import { saveToLocalStorage, fetchFromLocalStorage  } from '../utils/utils';
+import { getItem, setItem } from '../utils/LocalStorage';
 
 const ArticleSettings = (props) => {
     const defaultSettings = {
@@ -10,41 +10,38 @@ const ArticleSettings = (props) => {
         genwp_default_post_status: '',
         genwp_cron_frequency: '',
     };
-    const [settings, setSettings] = useState({ ...defaultSettings, ...props.settings });
+    const [settings, setSettings] = useState(() => {
+        const localData = getItem('genwpArticleSettings');
+        if (localData) {
+            return { ...localData };
+        }
+        if (props.settings && Object.keys(props.settings).length) {
+            return { ...props.settings };
+        }
+        return { ...defaultSettings };
+    });
+        
     const [status, setStatus] = useState('idle');
     const [authors, setAuthors] = useState([]);
     const [postTypes, setPostTypes] = useState([]);
     const [postStatuses, setPostStatuses] = useState([]);
     const [error, setError] = useState(null);
-    const abortController = new AbortController();
 
     // Fetch the current settings from WP
     const fetchSettings = async () => {
         try {
-            let loadedSettings = fetchFromLocalStorage('genwp-article-settings');
-    
-            // Check if data is older than 1 hour
-            const oneHour = 60 * 60 * 1000;
-            const now = new Date().getTime();
-            if (!loadedSettings || (now - loadedSettings.timestamp > oneHour)) {
-                const response = await API.fetchArticleSettings();
-                loadedSettings = response.data;
-                saveToLocalStorage('genwp-article-settings', {
-                    data: loadedSettings,
-                    timestamp: now
-                });
-            }
-    
-            setSettings({ ...defaultSettings, ...loadedSettings });
+            const response = await API.fetchArticleSettings();    
+            setSettings({ ...defaultSettings, ...response.data });
         } catch (error) {
             setError('Failed to fetch settings.');
+            console.error('Error fetching settings:', error);
         }
     };    
 
     // Fetch the current settings from WP
-    const fetchData = async (apiFunc, setDataFunc) => {
+    const fetchData = async (apiFunc, setDataFunc, signal) => {
         try {
-            const response = await apiFunc();
+            const response = await apiFunc({ signal });
             setDataFunc(response.data);
         } catch (error) {
             console.error(`Error fetching data: ${error}`);
@@ -52,13 +49,22 @@ const ArticleSettings = (props) => {
     };
     
     useEffect(() => {
-        fetchData(API.fetchAuthors, setAuthors);
-        fetchData(API.fetchPostTypes, setPostTypes);
-        fetchData(API.fetchPostStatuses, setPostStatuses);        
+        const abortController = new AbortController();
+        const signal = abortController.signal;
+
+        fetchData(API.fetchAuthors, setAuthors,  signal);
+        fetchData(API.fetchPostTypes, setPostTypes, signal);
+        fetchData(API.fetchPostStatuses, setPostStatuses, signal);
+        fetchSettings();        
+        
         return () => {
             abortController.abort();
         };
     }, []);    
+
+    useEffect(() => {
+        setItem('genwpArticleSettings', settings);
+    }, [settings]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -74,7 +80,6 @@ const ArticleSettings = (props) => {
 
         try {
             await API.saveArticleSettings(settings);
-            saveToLocalStorage('genwp-article-settings', settings);
             setStatus('saved');
             fetchSettings();
         } catch (error) {
@@ -170,6 +175,13 @@ const ArticleSettings = (props) => {
     
     return (
         <div className="wrap p-8 bg-gray-50 rounded shadow-lg w-full">
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong className="font-bold">Error!</strong>
+                    <span className="block sm:inline"> {error}</span>
+                </div>
+            )}
+
             {status === 'saved' && (
                 <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
                     <strong className="font-bold">Success!</strong>

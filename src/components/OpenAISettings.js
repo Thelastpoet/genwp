@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { saveToLocalStorage, fetchFromLocalStorage } from '../utils/utils';
+import { setItem, getItem } from '../utils/LocalStorage';
 import API from '../services/api';
 
 import APIKeyField from './APIKeyField';
@@ -23,11 +23,11 @@ const OpenAISettings = () => {
     // Fetch the current settings from WP
     const fetchSettings = useCallback(async () => {
         try {
-            let loadedSettings = fetchFromLocalStorage('genwp-settings');
+            let loadedSettings = getItem('genwp-settings');
 
             if (!loadedSettings) {
                 loadedSettings = await API.fetchSettings();
-                saveToLocalStorage('genwp-settings', loadedSettings);
+                setItem('genwp-settings', loadedSettings);
             }
     
             const completeSettings = {
@@ -82,7 +82,7 @@ const OpenAISettings = () => {
         try {
             await API.saveSettings(settings);
 
-            saveToLocalStorage('genwp-settings', settings);
+            setItem('genwp-settings', settings);
             setStatus('saved');
             fetchSettings();
         } catch (error) {

@@ -63,7 +63,7 @@ class genwp_Cron {
         $cron_frequency = isset($article_settings['genwp_cron_frequency']) ? (int) $article_settings['genwp_cron_frequency'] : 5;
 
         $schedules['genwp_cron_' . $cron_frequency . '_times_a_day'] = array(
-            'interval' => 86400 / $cron_frequency,
+            'interval' => ($cron_frequency != 0) ? (86400 / $cron_frequency) : (86400 / 5),
             'display' => sprintf(__('%d times a day', 'genwp'), $cron_frequency)
         );
 

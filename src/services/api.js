@@ -51,8 +51,8 @@ const API = {
     saveAPIKey: (keyType, apiKey) => baseAPI.post(`${keyType}-api-key`, { key: apiKey }),
 
     // OpenAI
-    fetchSettings: () => baseAPI.get('openai-settings'),
-    saveSettings: (settings) => baseAPI.post('openai-settings', settings, {
+    fetchSettings: () => baseAPI.get('settings'),
+    saveSettings: (settings) => baseAPI.post('settings', settings, {
         headers: {
             'Content-Type': 'application/json'
         }
