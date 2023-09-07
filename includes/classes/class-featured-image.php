@@ -2,10 +2,6 @@
 
 namespace GenWP;
 
-if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
-}
-
 use \WP_Error;
 
 class FeaturedImage {
@@ -25,44 +21,45 @@ class FeaturedImage {
 
         $image_url = esc_url_raw($image_data['image_url']);
 
-        // Download the image and add it to the media library
+        // Include the necessary WordPress files
         require_once(ABSPATH . 'wp-admin/includes/media.php');
         require_once(ABSPATH . 'wp-admin/includes/file.php');
         require_once(ABSPATH . 'wp-admin/includes/image.php');
 
-        $result = media_sideload_image($image_url, $post_id, $keyword, 'id');
-
-        // Check for errors
-        if (is_wp_error($result)) {
+        // Download the image to a temporary location
+        $tmp = download_url($image_url);
+        if (is_wp_error($tmp)) {
             return new WP_Error('download_error', 'Error downloading image');
         }
 
-        // Get the attachment ID of the downloaded image
-        $attachments = get_posts(array(
-            'post_parent' => $post_id,
-            'post_type' => 'attachment',
-            'post_mime_type' => 'image',
-            'orderby' => 'date',
-            'order' => 'DESC',
-            'numberposts' => 1,
-        ));
+        // Prepare an array of post data for the attachment.
+        $file_array = array(
+            'name' => sanitize_title($keyword) . '.jpeg',
+            'tmp_name' => $tmp
+        );
 
-        if (empty($attachments)) {
-            return new WP_Error('attachment_error', 'Error getting attachment ID');
+        // Insert the image into the media library and attach it to the post
+        $id = media_handle_sideload($file_array, $post_id, $keyword);
+
+        // Check for errors
+        if (is_wp_error($id)) {
+            @unlink($file_array['tmp_name']);
+            return new WP_Error('sideload_error', 'Error sideloading image');
         }
 
-        $attach_id = $attachments[0]->ID;
-
-        // Update the author of the attachment
+        // Get the post author
         $author_id = get_post_field('post_author', $post_id);
+
+        // Update attachment
         wp_update_post(array(
-            'ID' => $attach_id,
+            'ID' => $id,
             'post_author' => $author_id,
-            // No caption since the image is from Unsplash and not from Pexels
-            'post_excerpt' => '',
         ));
 
+        // Set ALT text
+        update_post_meta($id, '_wp_attachment_image_alt', $keyword);
+
         // Set the downloaded image as the featured image for the post
-        set_post_thumbnail($post_id, $attach_id);
+        set_post_thumbnail($post_id, $id);
     }
 }
