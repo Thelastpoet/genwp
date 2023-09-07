@@ -4,7 +4,7 @@
  * Plugin Name: GenWP
  * Plugin URI: https://nabaleka.com
  * Description: GenWP creates full WordPress posts with OpenAI Models.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Ammanulah Emmanuel
  * Author URI: https://ammanulah.com
  * License: GPL v2 or later
@@ -29,7 +29,7 @@ require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-deactivator.php';
 
 class GenWP {
 
-    const VERSION = '1.0.0';
+    const VERSION = '1.1.0';
 
     public function __construct() {
         $this->includes();
