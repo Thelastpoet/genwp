@@ -14,7 +14,7 @@ class ImageGenerator {
         $this->pexels_api_key = get_option('genwp_pexels_api_key');
     }
 
-    public function pexels_generate_image( $keyword, $orientation = 'landscape', $size = 'large' ) {
+    public function pexels_generate_image( $keyword, $orientation = 'landscape', $size = 'large2x' ) {
         $url = 'https://api.pexels.com/v1/search?query=' . urlencode($keyword) . '&orientation=' . urlencode($orientation) . '&size=' . urlencode($size) . '&per_page=1';
         $args = array(
             'headers' => array(
@@ -34,7 +34,7 @@ class ImageGenerator {
     
         if (!empty($data->photos)) {
             return array(
-                'image_url' => $data->photos[0]->src->large,
+                'image_url' => $data->photos[0]->src->large2x,
                 'photographer' => $data->photos[0]->photographer,
                 'photographer_url' => $data->photos[0]->photographer_url,
             );
