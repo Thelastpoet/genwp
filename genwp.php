@@ -3,7 +3,7 @@
 /**
  * Plugin Name: GenWP
  * Plugin URI: https://nabaleka.com
- * Description: GenWP creates full WordPress posts with OpenAI Models.
+ * Description: GenWP creates full WordPress posts using AI.
  * Version: 1.1.0
  * Author: Ammanulah Emmanuel
  * Author URI: https://ammanulah.com
@@ -23,9 +23,9 @@ if (!defined('ABSPATH')) {
 define('GENWP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('GENWP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Include the activation and deactivation classes.
-require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-activator.php';
-require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-deactivator.php';
+// activation and deactivation.
+require_once GENWP_PLUGIN_DIR . 'includes/genwp-activator.php';
+require_once GENWP_PLUGIN_DIR . 'includes/genwp-deactivator.php';
 
 class GenWP {
 
@@ -58,8 +58,8 @@ class GenWP {
         require_once GENWP_PLUGIN_DIR . 'includes/classes/class-featured-image.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/keywords-uploader.php';
 
-        require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-activator.php';
-        require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-deactivator.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/genwp-activator.php';
+        require_once GENWP_PLUGIN_DIR . 'includes/genwp-deactivator.php';
 
         require_once GENWP_PLUGIN_DIR . 'vendor/autoload.php';
     }

@@ -2,10 +2,6 @@
 
 namespace GenWP;
 
-if ( ! defined( 'ABSPATH' ) ) {
-    exit; // Exit if accessed directly.
-}
-
 use genwp\OpenAIGenerator;
 use genwp\genWP_Db;
 use genwp\FeaturedImage;
@@ -20,129 +16,104 @@ class genwp_Writer {
         $this->ai_generator = $ai_generator;
         $this->genwpdb = $genwpdb;
         $this->featured_image = $featured_image;
-    }  
-
-    public function gen_article($keyword, $num_words = 8000, $args = array()) {
-        // Initiate generate articles
-
-        if (!is_array($args)) {
-            $args = array();
-        }
-        
-        $args['max_tokens'] = $num_words;
-
-        // Fetch keyword, title, taxonomy_term, user_id and term_id
-        $keyword_data = $this->fetch_keyword_data($keyword);
-
-        // Generate the article content and title
-        $content_and_title = $this->generate_content($keyword, $args);
-
-        // Separate the title from the content
-        $title = $content_and_title['title'];
-        $content = $content_and_title['content'];
-
-        // Format the content
-        $formatted_content = $this->format_content($content);
-
-        // Create the new post
-        $post_id = $this->create_post($formatted_content, $title, $keyword_data, $keyword);
-
-        // Generate and set the featured image for the post
-        $this->featured_image->set_featured_image($keyword, $post_id);
-
-        // Delete keyword from the database
-        $this->genwpdb->delete_keywords(array($keyword));
-        
-        return $post_id;
     }
 
-    private function fetch_keyword_data($keyword) {
-        // fetch keyword data from DB
-        $data = $this->genwpdb->get_keywords();
-        $keyword_data = [];
+    public function generateArticle($keyword, $numWords = 8000, $args = []) {
+        $args['max_tokens'] = $numWords;
+        
+        $keywordData = $this->fetchKeywordData($keyword);
+        $contentAndTitle = $this->generateContent($keyword, $args);
+
+        $title = $contentAndTitle['title'];
+        $content = $contentAndTitle['content'];
+
+        $formattedContent = $this->formatContent($content);
+
+        $postId = $this->createPost($formattedContent, $title, $keywordData, $keyword);
+
+        $this->featured_image->setFeaturedImage($keyword, $postId);
+
+        $this->genwpdb->deleteKeywords([$keyword]);
+        
+        return $postId;
+    }
+
+    private function fetchKeywordData($keyword) {
+        $data = $this->genwpdb->getKeywords();
+        
         foreach ($data as $item) {
             if ($item['keyword'] === $keyword) {
-                $keyword_data = $item;
-                break;
+                return $item;
             }
         }
 
-        return $keyword_data;
+        return [];
     }
 
-    private function generate_content($keyword, $args) {
-        // We get the article from AI
-        $prompt = sprintf("Write a 2000-word SEO-optimized article about '%s'. Begin with a catchy, SEO-optimized level 1 heading (`#`) that captivates the reader. Follow with SEO optimized introductory paragraphs. Then organize the rest of the article into detailed heading tags (`##`) and lower-level heading tags (`###`, `####`, etc.). Include detailed paragraphs under each heading and subheading that provide in-depth information about the topic. Use bullet points, unordered lists, bold text, underlined text, code blocks etc to enhance readability and engagement.", $keyword);
+    private function generateContent($keyword, $args) {
+        $prompt = sprintf("Write a %d-word SEO-optimized article about '%s'. Begin with a catchy, SEO-optimized level 1 heading (`#`) that captivates the reader. Follow with SEO optimized introductory paragraphs. Then organize the rest of the article into detailed heading tags (`##`) and lower-level heading tags (`###`, `####`, etc.). Include detailed paragraphs under each heading and subheading that provide in-depth information about the topic. Use bullet points, unordered lists, bold text, underlined text, code blocks etc to enhance readability and engagement.", $args['max_tokens'], $keyword);
         
-        $content = $this->ai_generator->generate_completion($prompt, $args);
-    
-        // Extract the title from the first level 1 heading
+        $content = $this->ai_generator->generateCompletion($prompt, $args);
+
         preg_match('/^#\s+(.*)$/m', $content, $matches);
         $title = $matches[1];
 
-        // Check if the title contains asterisks at the beginning or end, and remove them if found
         if (strpos($title, '*') !== false) {
             $title = preg_replace('/^\*+|\*+$/', '', $title);
         }
 
         $content = preg_replace('/^#\s+.*$\n/m', '', $content);
     
-        return array('title' => $title, 'content' => $content);
-    }    
+        return ['title' => $title, 'content' => $content];
+    }
 
-    private function format_content($content) {
-        // Use CommonMark to format the content
+    private function formatContent($content) {
         $converter = new GithubFlavoredMarkdownConverter();
+        $formattedContent = $converter->convertToHtml($content);
 
-        $formatted_content = $converter->convertToHtml($content);
-
-        // Ensure that content is a string
-        if (is_object($formatted_content)) {
-            $formatted_content = (string) $formatted_content;
+        if (is_object($formattedContent)) {
+            $formattedContent = (string) $formattedContent;
         }
 
-        return $formatted_content;
-    } 
+        return $formattedContent;
+    }
 
-    private function create_post($content, $title, $keyword_data, $keyword) {    
-        // Retrieve the settings
-        $settings = get_option('genwp_article_settings', array());
+    private function createPost($content, $title, $keywordData, $keyword) {
+        $settings = get_option('genwp_article_settings', []);
 
-        $defult_author = isset($settings['genwp_default_author']) ? $settings['genwp_default_author'] : 1;
-        $default_post_type = isset($settings['genwp_default_post_type']) ? $settings['genwp_default_post_type'] : 'post';
-        $default_post_status = isset($settings['genwp_default_post_status']) ? $settings['genwp_default_post_status'] : 'publish';
+        $defaultAuthor = isset($settings['genwp_default_author']) ? $settings['genwp_default_author'] : 1;
+        $defaultPostType = isset($settings['genwp_default_post_type']) ? $settings['genwp_default_post_type'] : 'post';
+        $defaultPostStatus = isset($settings['genwp_default_post_status']) ? $settings['genwp_default_post_status'] : 'publish';
 
-        $author_id = $defult_author;
-        $term_id = null; 
+        $authorId = $defaultAuthor;
+        $termId = null; 
     
-        if ($keyword_data) {
-            $author_id = $keyword_data['user_id'];
-        
-            // Retrieve the term by its ID
-            $term = get_term($keyword_data['term_id']);
+        if ($keywordData) {
+            $authorId = $keywordData['user_id'];
+            $term = get_term($keywordData['term_id']);
     
             if (!is_wp_error($term)) {
-                $term_id = $term->term_id;
+                $termId = $term->term_id;
             }
         }
         
         $slug = sanitize_title($keyword);
         
-        $postarr = array(
+        $postArr = [
             'post_title'    => wp_strip_all_tags($title),
             'post_content'  => $content,
-            'post_status'   => $default_post_status,
-            'post_type'     => $default_post_type,
-            'post_author'   => $author_id,
+            'post_status'   => $defaultPostStatus,
+            'post_type'     => $defaultPostType,
+            'post_author'   => $authorId,
             'post_name'     => $slug,
-        );
+        ];
         
-        $post_id = wp_insert_post($postarr);
+        $postId = wp_insert_post($postArr);
         
-        if (!is_wp_error($post_id) && $term_id) {
-            wp_set_object_terms($post_id, $term_id, 'category');
+        if (!is_wp_error($postId) && $termId) {
+            wp_set_object_terms($postId, $termId, 'category');
         }
         
-        return $post_id;
-    }    
+        return $postId;
+    }
 }
