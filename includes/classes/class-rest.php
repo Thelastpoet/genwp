@@ -11,6 +11,14 @@ use GenWP\genWP_Db;
 use GenWP\KeywordsUploader;
 
 class GenWP_Rest extends \WP_REST_Controller {
+    const ROUTE_NAMESPACE = 'genwp/v1';
+    const SETTINGS_OPTION_NAME = 'genwp_settings';
+    const ARTICLE_SETTINGS_OPTION_NAME = 'genwp_article_settings';
+    const ARTICLE_SETTINGS_ROUTE = '/article-settings';
+    const SETTINGS_ROUTE = '/settings';
+    const KEYWORDS_ROUTE = '/keywords';
+    const AUTHORS_ROUTE = '/authors';
+
     private $gen_key_table;
     private $keywords_uploader;
     private $genwpdb;
@@ -23,49 +31,49 @@ class GenWP_Rest extends \WP_REST_Controller {
     }
 
     public function register_routes() {
-        register_rest_route( 'genwp/v1', '/settings', [
+        register_rest_route( self::ROUTE_NAMESPACE, self::SETTINGS_ROUTE, [
             'methods' => 'POST',
             'callback' => [ $this, 'save_settings' ],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
 
-        register_rest_route( 'genwp/v1', '/settings', [
+        register_rest_route( self::ROUTE_NAMESPACE, self::SETTINGS_ROUTE, [
             'methods' => 'GET',
             'callback' => [ $this, 'get_settings' ],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
 
-        register_rest_route('genwp/v1', '/authors', [
+        register_rest_route(self::ROUTE_NAMESPACE, self::AUTHORS_ROUTE, [
             'methods' => 'GET',
             'callback' => [$this, 'get_authors'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
 
-        register_rest_route('genwp/v1', '/types', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/types', [
             'methods' => 'GET',
             'callback' => [$this, 'get_post_types'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
 
-        register_rest_route('genwp/v1', '/statuses', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/statuses', [
             'methods' => 'GET',
             'callback' => [$this, 'get_post_statuses'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
 
-        register_rest_route('genwp/v1', '/article-settings', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/article-settings', [
             'methods' => 'GET',
             'callback' => [$this, 'get_article_settings'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
         
-        register_rest_route('genwp/v1', '/article-settings', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/article-settings', [
             'methods' => 'POST',
             'callback' => [$this, 'save_article_settings'],
             'permission_callback' => [$this, 'permissions_check'],
         ]); 
         
-        register_rest_route('genwp/v1', '/keywords', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/keywords', [
             'methods' => 'GET',
             'callback' => [$this->gen_key_table, 'get_keywords_data'],
             'permission_callback' => [$this, 'permissions_check'],
@@ -86,44 +94,44 @@ class GenWP_Rest extends \WP_REST_Controller {
         ]);
         
         
-        register_rest_route('genwp/v1', '/keywords/mapping', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/keywords/mapping', [
             'methods' => 'POST',
             'callback' => [$this->gen_key_table, 'update_keyword_mapping'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
 
-        register_rest_route('genwp/v1', '/keywords/update', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/keywords/update', [
             'methods' => 'POST',
             'callback' => [$this->gen_key_table, 'update_keyword'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
         
-        register_rest_route('genwp/v1', '/keywords/delete', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/keywords/delete', [
             'methods' => 'POST',
             'callback' => [$this->gen_key_table, 'delete_keywords'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
         
-        register_rest_route('genwp/v1', '/keywords/write-articles', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/keywords/write-articles', [
             'methods' => 'POST',
             'callback' => [$this->gen_key_table, 'write_articles'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
 
         // Register the new taxonomy terms endpoint
-        register_rest_route('genwp/v1', '/taxonomy-terms/(?P<taxonomy>[a-zA-Z0-9-]+)', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/taxonomy-terms/(?P<taxonomy>[a-zA-Z0-9-]+)', [
             'methods' => 'GET',
             'callback' => [$this, 'get_taxonomy_terms'],
             'permission_callback' => [$this, 'permissions_check'],
         ]);
 
-        register_rest_route('genwp/v1', '/upload-keywords', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/upload-keywords', [
             'methods' => 'POST',
             'callback' => [ $this->keywords_uploader, 'upload_keywords' ],
             'permission_callback' => [$this, 'permissions_check'],
         ]); 
         
-        register_rest_route('genwp/v1', '/get-(?P<keyType>.+)-api-key', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/get-(?P<keyType>.+)-api-key', [
             'methods' => 'GET',
             'callback' => [$this, 'get_api_key'],
             'permission_callback' => [$this, 'permissions_check'],
@@ -136,7 +144,7 @@ class GenWP_Rest extends \WP_REST_Controller {
             ]
         ]);
 
-        register_rest_route('genwp/v1', '/(?P<keyType>.+)-api-key', [
+        register_rest_route(self::ROUTE_NAMESPACE, '/(?P<keyType>.+)-api-key', [
             'methods' => 'POST',
             'callback' => [$this, 'save_api_key'],
             'permission_callback' => [$this, 'permissions_check'],
@@ -217,8 +225,7 @@ class GenWP_Rest extends \WP_REST_Controller {
     }
 
     public function permissions_check() {
-      // return current_user_can('manage_options'); 
-      return true;      
+      return current_user_can('manage_options');    
     }
 
     public function get_authors() {
@@ -252,7 +259,7 @@ class GenWP_Rest extends \WP_REST_Controller {
     }  
 
     public function get_article_settings() {
-        $settings = get_option('genwp_article_settings', []);
+        $settings = get_option(self::ARTICLE_SETTINGS_OPTION_NAME, []);
         return rest_ensure_response($settings);
     }
     
@@ -267,7 +274,7 @@ class GenWP_Rest extends \WP_REST_Controller {
         $settings = $request->get_json_params();
        
        // Save the settings
-        update_option('genwp_article_settings', $settings);
+       update_option(self::ARTICLE_SETTINGS_OPTION_NAME, $settings);
     
         return rest_ensure_response(['success' => true, 'message' => 'Settings saved successfully!']);
     }
