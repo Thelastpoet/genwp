@@ -7,11 +7,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use GenWP\genWP_Db;
+use League\Csv\Reader;
 use WP_REST_Request;
 use WP_REST_Response;
 
 require_once(ABSPATH . 'wp-admin/includes/file.php');
 
+/**
+ * Class KeywordsUploader
+ * Handles the uploading and processing of keywords from a CSV file.
+ *
+ * @package GenWP
+ */
 class KeywordsUploader {
     private $genwpdb;
 
@@ -19,96 +26,136 @@ class KeywordsUploader {
         $this->genwpdb = $genwpdb;
     }
 
+    /**
+     * Uploads keywords from a CSV file.
+     *
+     * @param WP_REST_Request $request The request object.
+     * @return array|WP_REST_Response The response object or array.
+     */
     public function upload_keywords(WP_REST_Request $request) {
         $files = $request->get_file_params();
 
         if (empty($files['file'])) {
-            return new WP_REST_Response(array(
-                'success' => false,
-                'message' => 'No file was uploaded.'
-            ), 400);
-        }        
+            return $this->error_response('No file was uploaded.', 400);
+        } 
     
         $file_array = $files['file'];
 
         // Extract other parameters from the request if needed
-        $taxonomy_term = $request->get_param('taxonomy_term');
         $hasHeader = $request->get_param('hasHeader') === 'true';
     
         // Check user capability
         if (!current_user_can('upload_files')) {
-            return new WP_REST_Response(array(
-                'success' => false,
-                'message' => 'You do not have permission to upload files.'
-            ), 403);
-        }        
+            return $this->error_response('You do not have permission to upload files.', 403);
+        }   
     
         // Validate file type
+        $validationResult = $this->validate_file($file_array);
+        if ($validationResult !== true) {
+            return $validationResult;
+        }
+
+        // Handle the uploaded file
+        $file = $this->handle_file_upload($file_array);
+        if (is_a($file, 'WP_REST_Response')) {
+            return $file;
+        }
+
+        $csvFilePath = $file['file'];
+
+        return $this->process_csv_file($csvFilePath, $hasHeader);
+    }
+
+    /**
+     * Returns an error response.
+     * 
+     * @param string $message The error message.
+     * @param int $status The HTTP status code.
+     * @return WP_REST_Response The error response object.
+    */
+
+    private function error_response(string $message, int $status): WP_REST_Response {
+        return new WP_REST_Response(['success' => false, 'message' => $message], $status);
+    }
+
+    /**
+     * Validates the uploaded file.
+     * @param array $file_array The file array.
+     * @return true|WP_REST_Response True if the file is valid, error response otherwise.
+    */
+    private function validate_file(array $file_array) {
         $path_info = pathinfo($file_array['name']);
         $ext = isset($path_info['extension']) ? $path_info['extension'] : '';
-    
+
         if ($ext !== 'csv') {
-            return new WP_REST_Response(array(
-                'success' => false,
-                'message' => 'Please upload a valid CSV file.'
-            ), 400);
-        }        
+            return $this->error_response('Please upload a valid CSV file.', 400);
+        }
+
+        return true;
+    }
     
-        // Handle the uploaded file
-        $overrides = array('test_form' => false);
+    /**
+     * Handles the file upload.
+     *
+     * @param array $file_array The file array.
+     * @return array|WP_REST_Response The file data if successful, error response otherwise.
+    */
+
+    private function handle_file_upload(array $file_array) {
+        $overrides = ['test_form' => false];
         $file = wp_handle_upload($file_array, $overrides);
-    
+
         if (isset($file['error'])) {
-            return new WP_REST_Response(array(
-                'success' => false,
-                'message' => $file['error']
-            ), 400);
-        }        
-    
-        $csvFilePath = $file['file'];
-    
-        // Ensure the CSV file is readable
+            return $this->error_response($file['error'], 400);
+        }
+        return $file;
+    }
+
+    /**
+     * Processes the CSV file.
+     *
+     * @param string $csvFilePath The path to the CSV file.
+     * @param bool $hasHeader Whether the CSV file has a header row.
+     * @return array|WP_REST_Response The success response if successful, error response otherwise.
+    */
+
+    private function process_csv_file(string $csvFilePath, bool $hasHeader) {
         if (!is_readable($csvFilePath)) {
-            return new WP_REST_Response(array(
-                'success' => false,
-                'message' => "Cannot read CSV file: $csvFilePath"
-            ), 400);
-        }        
-    
-        // Open the CSV file for reading
-        if (($handle = fopen($csvFilePath, 'r')) !== FALSE) {
-            $rowIndex = 0;
+            return $this->error_response("Cannot read CSV file: $csvFilePath", 400);
+        }
+        
+        try {
+            // Load CSV file using League\Csv\Reader
+            $csv = Reader::createFromPath($csvFilePath, 'r');
+            $csv->setHeaderOffset($hasHeader ? 0 : null);
+
+            $keywordsBatch = [];
+            $batchSize = 100;
             $keywordsProcessed = 0;
             $keywordsSkipped = 0;
-    
-            while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
-                // If the file has a header row, skip the first row
-                if ($hasHeader && $rowIndex == 0) {
-                    $rowIndex++;
-                    continue;
-                }
-    
-                // Ignore empty rows
-                if (empty($data[0])) {
+
+            foreach ($csv as $record) {
+                $keyword = sanitize_text_field($record['keyword']);
+                if (empty($keyword)) {
                     $keywordsSkipped++;
                     continue;
                 }
-    
-                // Assume the keyword is in the first column of each row
-                $keyword = sanitize_text_field($data[0]);
-    
-                // Add the keyword to the database
-                $this->genwpdb->saveKeywords(array($keyword));
-    
-                $rowIndex++;
+
+                $keywordsBatch[] = $keyword;
                 $keywordsProcessed++;
+
+                if (count($keywordsBatch) >= $batchSize) {
+                    $this->genwpdb->saveKeywords($keywordsBatch);
+                    $keywordsBatch = [];
+                }
             }
-    
-            fclose($handle);
-    
-            // Delete the file after reading
+
+            if (!empty($keywordsBatch)) {
+                $this->genwpdb->saveKeywords($keywordsBatch);
+            }
+            
             unlink($csvFilePath);
-    
+        
             // Return success message with stats
             return array(
                 'success' => true,
@@ -116,12 +163,17 @@ class KeywordsUploader {
                 'keywordsProcessed' => $keywordsProcessed,
                 'keywordsSkipped' => $keywordsSkipped
             );
-    
-        } else {
-            return new WP_REST_Response(array(
-                'success' => false,
-                'message' => "Failed to open CSV file: $csvFilePath"
-            ), 400);
+        
+        } catch (\Exception $e) {
+                return new WP_REST_Response(array(
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ), 400);
+        } finally {
+            if (file_exists($csvFilePath)) {
+                unlink($csvFilePath);
+            }
+            
         }
-    }    
+    }
 }
