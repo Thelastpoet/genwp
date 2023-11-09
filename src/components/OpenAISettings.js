@@ -62,6 +62,7 @@ const OpenAISettings = () => {
 
     // Models
     const models = [
+        { value: 'gpt-4-1106-preview', label: 'GPT-4 Trubo' },
         { value: 'gpt-4', label: 'GPT-4' },
         { value: 'gpt-3.5-turbo-16k', label: 'GPT-3.5 Turbo 16K' },
         { value: 'text-davinci-003', label: 'Davinci' }

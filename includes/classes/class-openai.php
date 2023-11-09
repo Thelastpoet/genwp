@@ -104,7 +104,7 @@ class OpenAIGenerator {
     public function generate_completion($prompt, $args = array()) {
 		$system_message = "The assistant is an experienced writer who produces detailed and informative (2000+ words) articles about the topic. The assistant uses a human-like writing style that is always formal and professional, utilizing active voice, personification and varied sentence structures to create an engaging flow and pace. The assistant must organize the content using Markdown formatting, specifically the CommonMark syntax.";
 
-		if ($this->model == 'gpt-4' || $this->model == 'gpt-3.5-turbo-16k') {
+		if ($this->model == 'gpt-4' || $this->model == 'gpt-3.5-turbo-16k' || $this->model == 'gpt-4-1106-preview') {
 			// Chat Model
 			$messages = array(
 				array(
