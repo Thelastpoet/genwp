@@ -4,7 +4,7 @@
  * Plugin Name: GenWP
  * Plugin URI: https://nabaleka.com
  * Description: GenWP creates full WordPress posts using AI.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Ammanulah Emmanuel
  * Author URI: https://ammanulah.com
  * License: GPL v2 or later
@@ -23,13 +23,8 @@ if (!defined('ABSPATH')) {
 define('GENWP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('GENWP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// activation and deactivation.
-require_once GENWP_PLUGIN_DIR . 'includes/genwp-activator.php';
-require_once GENWP_PLUGIN_DIR . 'includes/genwp-deactivator.php';
-
 class GenWP {
-
-    const VERSION = '1.1.0';
+    const VERSION = '1.1.1';
 
     public function __construct() {
         $this->includes();
@@ -48,19 +43,12 @@ class GenWP {
         require_once GENWP_PLUGIN_DIR . 'includes/classes/class-rest.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/keywords-table.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-db.php';
-        
         require_once GENWP_PLUGIN_DIR . 'includes/classes/class-openai.php';
-        
-    
         require_once GENWP_PLUGIN_DIR . 'includes/classes/class-writer.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/cron.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/class-image-generator.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/class-featured-image.php';
         require_once GENWP_PLUGIN_DIR . 'includes/classes/keywords-uploader.php';
-
-        require_once GENWP_PLUGIN_DIR . 'includes/genwp-activator.php';
-        require_once GENWP_PLUGIN_DIR . 'includes/genwp-deactivator.php';
-
         require_once GENWP_PLUGIN_DIR . 'vendor/autoload.php';
     }
 }
@@ -76,9 +64,7 @@ function init_genwp() {
  * Activation hook callback.
  */
 function activate_genwp() {
-    require_once GENWP_PLUGIN_DIR . 'includes/classes/cron.php';
-    require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-db.php';
-    require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-activator.php';
+    require_once GENWP_PLUGIN_DIR . 'includes/genwp-activator.php';
     genwp_Activation::activate();
 }
 
@@ -86,7 +72,7 @@ function activate_genwp() {
  * Deactivation hook callback.
  */
 function deactivate_genwp() {
-    require_once GENWP_PLUGIN_DIR . 'includes/classes/genwp-deactivator.php';
+    require_once GENWP_PLUGIN_DIR . 'includes/genwp-deactivator.php';
     genwp_Deactivation::deactivate();
 }
 
