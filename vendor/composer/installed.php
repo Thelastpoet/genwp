@@ -3,7 +3,7 @@
         'name' => 'emcie/genwp',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '96b41aa9e643eab346f29280379bf320e8a9b70e',
+        'reference' => 'a7852e5f4093306920915dfd3baaac950ec06767',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'emcie/genwp' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '96b41aa9e643eab346f29280379bf320e8a9b70e',
+            'reference' => 'a7852e5f4093306920915dfd3baaac950ec06767',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
